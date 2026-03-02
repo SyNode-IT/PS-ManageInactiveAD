@@ -60,11 +60,11 @@ Param (
 
   [string[]]$ExcludeOU,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\EmptyGroups.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$DeleteObjects,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -86,6 +86,9 @@ Import-Module ActiveDirectory
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $ScriptName = 'Find-ADEmptyGroups'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -170,6 +173,14 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Empty groups report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Groupes vides" `
+    -Description "$($Results.Count) groupe(s) sans aucun membre" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Groupes vides'; Value = $Results.Count; Color = '#e67e22' }
+    )
+
   if ($DeleteObjects) {
     Remove-EmptyGroups -Data $Results
   }
@@ -180,5 +191,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

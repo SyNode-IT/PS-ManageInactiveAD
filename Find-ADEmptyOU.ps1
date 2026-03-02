@@ -61,11 +61,11 @@ Param (
 
   [string[]]$ExcludeOU,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\EmptyOUs.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$DeleteObjects,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -87,6 +87,9 @@ Import-Module ActiveDirectory
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $ScriptName = 'Find-ADEmptyOU'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -176,6 +179,14 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Empty OUs report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "OUs vides" `
+    -Description "$($Results.Count) OU(s) sans aucun objet" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'OUs vides'; Value = $Results.Count; Color = '#e67e22' }
+    )
+
   if ($DeleteObjects) {
     Remove-EmptyOUs -Data $Results
   }
@@ -186,5 +197,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

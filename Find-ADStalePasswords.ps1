@@ -63,11 +63,11 @@ Param (
   [string]$SearchBase,
   [string[]]$ExcludeOU,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\StalePasswords.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$ForceChangeAtLogon,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -86,6 +86,9 @@ Import-Module ActiveDirectory
 
 $ScriptName = 'Find-ADStalePasswords'
 $ThresholdDate = (Get-Date).AddDays(-$DaysOld)
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -168,6 +171,15 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Stale passwords report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Mots de passe anciens" `
+    -Description "$($Results.Count) compte(s) avec mot de passe de plus de $DaysOld jours" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Mots de passe anciens'; Value = $Results.Count; Color = '#e67e22' }
+      @{ Label = 'Seuil (jours)'; Value = $DaysOld; Color = '#0078d4' }
+    )
+
   if ($ForceChangeAtLogon) {
     Set-ForcePasswordChange -Data $Results
   }
@@ -178,5 +190,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

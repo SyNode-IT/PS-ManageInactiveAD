@@ -100,12 +100,12 @@ Param (
 
   [string]$QuarantineOU,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\InactiveUsers.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$DisableUsers,
   [switch]$DeleteUsers,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -130,6 +130,9 @@ Import-Module ActiveDirectory
 $InactiveDate = (Get-Date).AddDays(-$DaysInactive)
 $ServiceAccountFilter = "*$ServiceAccountIdentifier*"
 $ScriptName = 'Find-ADInactiveUsers'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -266,6 +269,15 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Inactive users report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Utilisateurs inactifs" `
+    -Description "$($Results.Count) utilisateur(s) inactif(s) depuis plus de $DaysInactive jours" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Inactifs'; Value = $Results.Count; Color = '#dc3545' }
+      @{ Label = 'Seuil (jours)'; Value = $DaysInactive; Color = '#0078d4' }
+    )
+
   if ($DisableUsers) {
     Disable-InactiveAccounts -Data $Results
   }
@@ -280,5 +292,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

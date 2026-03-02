@@ -67,11 +67,11 @@ Param (
   [switch]$IncludeServiceAccounts,
   [string]$ServiceAccountIdentifier = 'svc',
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\PasswordNeverExpires.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$RemoveFlag,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -90,6 +90,9 @@ Import-Module ActiveDirectory
 
 $ScriptName = 'Find-ADPasswordNeverExpires'
 $ServiceAccountFilter = "*$ServiceAccountIdentifier*"
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -175,6 +178,14 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'PasswordNeverExpires report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Mots de passe non-expirants" `
+    -Description "$($Results.Count) compte(s) avec PasswordNeverExpires" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Non-expirants'; Value = $Results.Count; Color = '#dc3545' }
+    )
+
   if ($RemoveFlag) {
     Remove-PasswordNeverExpiresFlag -Data $Results
   }
@@ -185,5 +196,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

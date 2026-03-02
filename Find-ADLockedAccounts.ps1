@@ -53,11 +53,11 @@
 Param (
   [string]$SearchBase,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\LockedAccounts.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$UnlockAccounts,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -75,6 +75,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module ActiveDirectory
 
 $ScriptName = 'Find-ADLockedAccounts'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -146,6 +149,14 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Locked accounts report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Comptes verrouillés" `
+    -Description "$($Results.Count) compte(s) actuellement verrouillé(s)" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Verrouillés'; Value = $Results.Count; Color = '#dc3545' }
+    )
+
   if ($UnlockAccounts) {
     Unlock-LockedAccounts -Data $Results
   }
@@ -156,5 +167,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

@@ -73,10 +73,10 @@ Param (
   [string]$SearchBase,
   [string[]]$ExcludeOU,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\ObsoleteOS.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -94,6 +94,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module ActiveDirectory
 
 $ScriptName = 'Find-ADObsoleteOS'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -169,11 +172,21 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Obsolete OS report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "OS obsolètes" `
+    -Description "$($Results.Count) ordinateur(s) avec un système d'exploitation en fin de vie" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'OS obsolètes'; Value = $Results.Count; Color = '#dc3545' }
+    )
+
   Send-ADMReport -EmailTo $EmailTo -EmailFrom $EmailFrom -SmtpServer $SmtpServer `
     -Subject "[$ScriptName] $($Results.Count) computers with obsolete OS" `
     -Attachments $ReportFilePath
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

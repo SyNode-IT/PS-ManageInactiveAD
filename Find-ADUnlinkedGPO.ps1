@@ -56,11 +56,11 @@
 Param (
   [string[]]$ExcludeGPO = @('Default Domain Policy', 'Default Domain Controllers Policy'),
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\UnlinkedGPO.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$DeleteObjects,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -78,6 +78,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module GroupPolicy
 
 $ScriptName = 'Find-ADUnlinkedGPO'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -158,6 +161,14 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Unlinked GPOs report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "GPOs orphelines" `
+    -Description "$($Results.Count) GPO(s) non liée(s) à aucune OU" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'GPOs orphelines'; Value = $Results.Count; Color = '#e67e22' }
+    )
+
   if ($DeleteObjects) {
     Remove-UnlinkedGPOs -Data $Results
   }
@@ -168,5 +179,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

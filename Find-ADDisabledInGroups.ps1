@@ -58,11 +58,11 @@ Param (
   [string]$SearchBase,
   [string[]]$ExcludeOU,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\DisabledInGroups.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$RemoveMemberships,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -80,6 +80,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module ActiveDirectory
 
 $ScriptName = 'Find-ADDisabledInGroups'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -178,6 +181,16 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Disabled users in groups report'
 
+  $UniqueUsers = ($Results | Select-Object -Unique Username).Count
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Comptes désactivés dans des groupes" `
+    -Description "$UniqueUsers compte(s) désactivé(s) avec $($Results.Count) appartenance(s) résiduelle(s)" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Appartenances'; Value = $Results.Count; Color = '#dc3545' }
+      @{ Label = 'Utilisateurs'; Value = $UniqueUsers; Color = '#e67e22' }
+    )
+
   if ($RemoveMemberships) {
     Remove-StaleMemberships -Data $Results
   }
@@ -188,5 +201,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

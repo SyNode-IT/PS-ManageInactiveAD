@@ -5,13 +5,13 @@
 
 .DESCRIPTION
   This file is dot-sourced by all AD management scripts in the toolkit.
-  It provides logging, reporting, email notification, exclusion filtering,
-  and quarantine functions.
+  It provides logging, reporting (CSV + HTML), email notification,
+  exclusion filtering, and quarantine functions.
 
   DO NOT execute this file directly. It is loaded automatically by the scripts.
 
 .NOTES
-  Version:        2.0
+  Version:        2.1
   Compatible:     Windows Server 2022, Windows Server 2025 (PowerShell 5.1+)
 #>
 
@@ -25,9 +25,13 @@ function Start-ADMLogging {
     Starts logging to a timestamped file.
   #>
   param(
-    [string]$LogDirectory = 'C:\tmp\Logs',
+    [string]$LogDirectory,
     [string]$ScriptName = 'ADManagement'
   )
+
+  if (-not $LogDirectory) {
+    $LogDirectory = Join-Path $PSScriptRoot 'Rapports\Logs'
+  }
 
   if (-not (Test-Path $LogDirectory)) {
     New-Item -Path $LogDirectory -ItemType Directory -Force | Out-Null
@@ -77,7 +81,39 @@ function Write-ADMLog {
   }
 }
 
-#-----------------------------------------------------------[Output]---------------------------------------------------------------
+#-----------------------------------------------------------[Report Paths]--------------------------------------------------------
+
+function Resolve-ADMReportPath {
+  <#
+  .SYNOPSIS
+    Resolves the report base path. If not specified, defaults to $PSScriptRoot\Rapports\<ScriptName>.
+    Returns a hashtable with CsvPath and HtmlPath.
+  #>
+  param(
+    [string]$ReportFilePath,
+    [string]$ScriptName,
+    [string]$CallerPSScriptRoot
+  )
+
+  if (-not $ReportFilePath) {
+    $ReportsDir = Join-Path $CallerPSScriptRoot 'Rapports'
+    $ReportFilePath = Join-Path $ReportsDir "$ScriptName.csv"
+  }
+
+  # Ensure .csv extension
+  if ($ReportFilePath -notlike '*.csv') {
+    $ReportFilePath = "$ReportFilePath.csv"
+  }
+
+  $HtmlPath = [System.IO.Path]::ChangeExtension($ReportFilePath, '.html')
+
+  return @{
+    CsvPath  = $ReportFilePath
+    HtmlPath = $HtmlPath
+  }
+}
+
+#-----------------------------------------------------------[CSV Output]-----------------------------------------------------------
 
 function New-ADMOutputDirectory {
   <#
@@ -112,16 +148,246 @@ function Export-ADMReport {
     [string]$ReportName = 'Report'
   )
 
-  Write-ADMLog "Creating $ReportName at [$Path]..."
+  Write-ADMLog "Creating CSV $ReportName at [$Path]..."
 
   try {
     New-ADMOutputDirectory -Path $Path
     $Data | Export-Csv -Path $Path -NoTypeInformation -Encoding UTF8
-    Write-ADMLog "$ReportName saved successfully ($($Data.Count) entries)."
+    Write-ADMLog "CSV saved ($($Data.Count) entries)."
   }
   catch {
-    Write-ADMLog "Failed to create $ReportName : $($_.Exception.Message)" -Level Error
+    Write-ADMLog "Failed to create CSV: $($_.Exception.Message)" -Level Error
     throw
+  }
+}
+
+#-----------------------------------------------------------[HTML Output]----------------------------------------------------------
+
+function Export-ADMHTMLReport {
+  <#
+  .SYNOPSIS
+    Exports data to a styled HTML report (GPOZaurr-like).
+  #>
+  param(
+    [Parameter(Mandatory = $true)]
+    [AllowEmptyCollection()]
+    [array]$Data,
+
+    [Parameter(Mandatory = $true)]
+    [string]$Path,
+
+    [Parameter(Mandatory = $true)]
+    [string]$Title,
+
+    [string]$Description = '',
+
+    [string]$ScriptName = 'PS-ManageInactiveAD',
+
+    # Summary cards: @( @{Label='Total';Value=42;Color='#0078d4'}, ... )
+    [array]$SummaryCards = @(),
+
+    # Status column color mapping: @{ 'ColumnName' = @{ 'OK'='success'; 'ERROR'='danger' } }
+    [hashtable]$StatusMappings = @{}
+  )
+
+  Write-ADMLog "Creating HTML report at [$Path]..."
+
+  try {
+    New-ADMOutputDirectory -Path $Path
+
+    # Build summary cards HTML
+    $SummaryHtml = ''
+    if ($SummaryCards.Count -gt 0) {
+      $CardsHtml = foreach ($Card in $SummaryCards) {
+        $Color = if ($Card.Color) { $Card.Color } else { '#0078d4' }
+        @"
+      <div class="card">
+        <div class="card-value" style="color:$Color">$($Card.Value)</div>
+        <div class="card-label">$($Card.Label)</div>
+      </div>
+"@
+      }
+      $SummaryHtml = @"
+    <div class="summary">
+$($CardsHtml -join "`n")
+    </div>
+"@
+    }
+
+    # Build table
+    $TableHtml = ''
+    if ($Data.Count -gt 0) {
+      $Columns = $Data[0].PSObject.Properties.Name
+
+      # Table header
+      $ThCells = foreach ($Col in $Columns) {
+        "          <th>$Col</th>"
+      }
+      $TheadHtml = $ThCells -join "`n"
+
+      # Table rows
+      $RowsHtml = foreach ($Row in $Data) {
+        $TdCells = foreach ($Col in $Columns) {
+          $Value = $Row.$Col
+          if ($null -eq $Value) { $Value = '' }
+          $CssClass = ''
+
+          # Apply status mapping if column matches
+          if ($StatusMappings.ContainsKey($Col)) {
+            $Map = $StatusMappings[$Col]
+            $ValStr = "$Value"
+            if ($Map.ContainsKey($ValStr)) {
+              $CssClass = " class=`"status-$($Map[$ValStr])`""
+            }
+          }
+
+          "          <td$CssClass>$Value</td>"
+        }
+        "        <tr>`n$($TdCells -join "`n")`n        </tr>"
+      }
+
+      $TableHtml = @"
+    <div class="table-container">
+      <table>
+        <thead>
+        <tr>
+$TheadHtml
+        </tr>
+        </thead>
+        <tbody>
+$($RowsHtml -join "`n")
+        </tbody>
+      </table>
+    </div>
+"@
+    }
+    else {
+      $TableHtml = '    <div class="no-data">Aucun r&eacute;sultat trouv&eacute;.</div>'
+    }
+
+    $GeneratedDate = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $DescHtml = if ($Description) { "      <div class=`"header-desc`">$Description</div>" } else { '' }
+
+    $Html = @"
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>$Title</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #eef1f5; color: #2c3e50; }
+
+  .header {
+    background: linear-gradient(135deg, #0078d4 0%, #00a4ef 100%);
+    color: #fff; padding: 28px 36px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .header-meta { font-size: 13px; opacity: .85; }
+  .header-desc { font-size: 14px; margin-top: 8px; opacity: .9; }
+
+  .summary {
+    display: flex; gap: 16px; padding: 24px 36px; flex-wrap: wrap;
+  }
+  .card {
+    background: #fff; border-radius: 10px; padding: 18px 24px; flex: 1; min-width: 140px;
+    text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.08); border-top: 3px solid #0078d4;
+  }
+  .card-value { font-size: 34px; font-weight: 700; line-height: 1.2; }
+  .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #888; margin-top: 4px; }
+
+  .table-container {
+    padding: 0 36px 36px; overflow-x: auto;
+  }
+  table {
+    width: 100%; border-collapse: collapse; background: #fff;
+    border-radius: 10px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    font-size: 13px;
+  }
+  thead th {
+    background: #2c3e50; color: #fff; padding: 12px 16px; text-align: left;
+    font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .3px;
+    position: sticky; top: 0;
+  }
+  tbody td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  tbody tr:hover { background: #f0f7ff; }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  tbody tr:nth-child(even):hover { background: #f0f7ff; }
+
+  .status-success { color: #28a745; font-weight: 600; }
+  .status-warning { color: #e67e22; font-weight: 600; }
+  .status-danger  { color: #dc3545; font-weight: 600; }
+  .status-info    { color: #0078d4; font-weight: 600; }
+  .status-muted   { color: #999; }
+
+  .no-data {
+    text-align: center; padding: 60px 20px; color: #999; font-size: 16px;
+    background: #fff; border-radius: 10px; margin: 0 36px 36px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  }
+
+  .footer {
+    text-align: center; padding: 20px 36px; color: #aaa; font-size: 11px;
+    border-top: 1px solid #ddd; margin-top: 12px;
+  }
+  .footer a { color: #0078d4; text-decoration: none; }
+
+  @media print {
+    body { background: #fff; }
+    .header { box-shadow: none; }
+    .card, table { box-shadow: none; border: 1px solid #ddd; }
+    thead th { position: static; }
+  }
+  @media (max-width: 768px) {
+    .summary { flex-direction: column; }
+    .table-container, .summary, .header { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>$Title</h1>
+    <div class="header-meta">G&eacute;n&eacute;r&eacute; le $GeneratedDate &mdash; $ScriptName</div>
+$DescHtml
+  </div>
+
+$SummaryHtml
+
+$TableHtml
+
+  <div class="footer">
+    PS-ManageInactiveAD v2.1 &mdash; <a href="https://github.com/SyNode-IT/PS-ManageInactiveAD">GitHub</a>
+  </div>
+
+</body>
+</html>
+"@
+
+    $Html | Out-File -FilePath $Path -Encoding UTF8
+    Write-ADMLog "HTML report saved."
+  }
+  catch {
+    Write-ADMLog "Failed to create HTML report: $($_.Exception.Message)" -Level Warning
+  }
+}
+
+#-----------------------------------------------------------[Open Report]---------------------------------------------------------
+
+function Open-ADMReport {
+  <#
+  .SYNOPSIS
+    Opens a report file in the default browser/application.
+  #>
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Path
+  )
+
+  if (Test-Path $Path) {
+    Write-ADMLog "Opening report: $Path"
+    Start-Process $Path
   }
 }
 

@@ -88,12 +88,12 @@ Param (
 
   [string]$QuarantineOU,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\InactiveComputers.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$DisableObjects,
   [switch]$DeleteObjects,
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -116,6 +116,9 @@ Import-Module ActiveDirectory
 
 $InactiveDate = (Get-Date).AddDays(-$DaysInactive)
 $ScriptName = 'Find-ADInactiveComputers'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -235,6 +238,15 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Inactive computers report'
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Ordinateurs inactifs" `
+    -Description "$($Results.Count) ordinateur(s) inactif(s) depuis plus de $DaysInactive jours" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Inactifs'; Value = $Results.Count; Color = '#dc3545' }
+      @{ Label = 'Seuil (jours)'; Value = $DaysInactive; Color = '#0078d4' }
+    )
+
   if ($DisableObjects) {
     Disable-InactiveComputers -Data $Results
   }
@@ -249,5 +261,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

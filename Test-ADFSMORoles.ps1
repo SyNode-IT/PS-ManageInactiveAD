@@ -48,10 +48,10 @@
 
 [CmdletBinding()]
 Param (
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\FSMORoles.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -69,6 +69,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module ActiveDirectory
 
 $ScriptName = 'Test-ADFSMORoles'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -224,6 +227,23 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'FSMO roles and DC report'
 
+  $FSMOCount = ($Results | Where-Object { $_.Type -eq 'FSMO Role' }).Count
+  $DCCount = ($Results | Where-Object { $_.Type -eq 'Domain Controller' }).Count
+  $Issues = ($Results | Where-Object { $_.Status -eq 'UNREACHABLE' }).Count
+
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Rôles FSMO et contrôleurs de domaine" `
+    -Description "Audit des rôles FSMO et de la disponibilité des DCs" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Rôles FSMO'; Value = $FSMOCount; Color = '#0078d4' }
+      @{ Label = 'DCs'; Value = $DCCount; Color = '#28a745' }
+      @{ Label = 'Problèmes'; Value = $Issues; Color = if ($Issues -gt 0) { '#dc3545' } else { '#28a745' } }
+    ) `
+    -StatusMappings @{
+      'Status' = @{ 'OK' = 'success'; 'UNREACHABLE' = 'danger' }
+    }
+
   $HasIssues = ($Results | Where-Object { $_.Status -eq 'UNREACHABLE' }).Count -gt 0
   $SubjectPrefix = if ($HasIssues) { 'WARNING' } else { 'OK' }
 
@@ -233,5 +253,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

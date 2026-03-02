@@ -42,10 +42,10 @@
 
 [CmdletBinding()]
 Param (
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\DuplicateSPN.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -63,6 +63,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module ActiveDirectory
 
 $ScriptName = 'Find-ADDuplicateSPN'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -153,6 +156,16 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Duplicate SPNs report'
 
+  $UniqueSPNs = ($Results | Select-Object -Unique SPN).Count
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "SPNs dupliqués" `
+    -Description "$UniqueSPNs SPN(s) en doublon affectant $($Results.Count) objet(s)" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'SPNs dupliqués'; Value = $UniqueSPNs; Color = '#dc3545' }
+      @{ Label = 'Objets affectés'; Value = $Results.Count; Color = '#e67e22' }
+    )
+
   Write-ADMLog "" -Level Warning
   Write-ADMLog "ACTION REQUIRED: Duplicate SPNs cause Kerberos authentication failures." -Level Warning
   Write-ADMLog "Review the report and use 'setspn -d <SPN> <account>' to remove duplicates manually." -Level Warning
@@ -163,5 +176,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

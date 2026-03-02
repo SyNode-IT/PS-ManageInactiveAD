@@ -68,10 +68,10 @@ Param (
 
   [switch]$IncludeNested,
 
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\PrivilegedAccounts.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -89,6 +89,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module ActiveDirectory
 
 $ScriptName = 'Find-ADPrivilegedAccounts'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -165,11 +168,23 @@ else {
   $UniqueGroups = ($Results | Select-Object -Unique GroupName).Count
   Write-ADMLog "Summary: $UniqueUsers unique user(s) across $UniqueGroups group(s)."
 
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Comptes privilégiés" `
+    -Description "Audit des membres des groupes à privilèges élevés" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'Entrées'; Value = $Results.Count; Color = '#0078d4' }
+      @{ Label = 'Utilisateurs'; Value = $UniqueUsers; Color = '#dc3545' }
+      @{ Label = 'Groupes'; Value = $UniqueGroups; Color = '#e67e22' }
+    )
+
   Send-ADMReport -EmailTo $EmailTo -EmailFrom $EmailFrom -SmtpServer $SmtpServer `
     -Subject "[$ScriptName] Privileged accounts audit - $UniqueUsers users across $UniqueGroups groups" `
     -Attachments $ReportFilePath
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd

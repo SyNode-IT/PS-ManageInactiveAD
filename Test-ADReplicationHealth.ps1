@@ -42,10 +42,10 @@
 
 [CmdletBinding()]
 Param (
-  [ValidatePattern('\.csv$')]
-  [string]$ReportFilePath = 'C:\tmp\ReplicationHealth.csv',
+  [string]$ReportFilePath = '',
 
   [switch]$EnableLogging,
+  [switch]$NoOpen,
 
   [string[]]$EmailTo,
   [string]$SmtpServer,
@@ -63,6 +63,9 @@ if (-not (Test-Path $CommonPath)) {
 Import-Module ActiveDirectory
 
 $ScriptName = 'Test-ADReplicationHealth'
+$Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
+$ReportFilePath = $Paths.CsvPath
+$HtmlReportPath = $Paths.HtmlPath
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -155,6 +158,23 @@ if ($null -eq $Results -or $Results.Count -eq 0) {
 else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Replication health report'
 
+  $OKCount = ($Results | Where-Object { $_.Status -eq 'OK' }).Count
+  $ErrorCount = ($Results | Where-Object { $_.Status -eq 'ERROR' }).Count
+  $UnreachableCount = ($Results | Where-Object { $_.Status -eq 'UNREACHABLE' }).Count
+
+  Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
+    -Title "Santé de la réplication AD" `
+    -Description "État de la réplication entre les contrôleurs de domaine" `
+    -ScriptName $ScriptName `
+    -SummaryCards @(
+      @{ Label = 'OK'; Value = $OKCount; Color = '#28a745' }
+      @{ Label = 'Erreurs'; Value = $ErrorCount; Color = '#dc3545' }
+      @{ Label = 'Injoignables'; Value = $UnreachableCount; Color = '#e67e22' }
+    ) `
+    -StatusMappings @{
+      'Status' = @{ 'OK' = 'success'; 'ERROR' = 'danger'; 'UNREACHABLE' = 'warning' }
+    }
+
   $HasErrors = ($Results | Where-Object { $_.Status -ne 'OK' }).Count -gt 0
   $SubjectPrefix = if ($HasErrors) { 'WARNING' } else { 'OK' }
 
@@ -164,5 +184,7 @@ else {
 }
 
 if ($EnableLogging) { Stop-ADMLogging }
+
+if (-not $NoOpen) { Open-ADMReport -Path $HtmlReportPath }
 
 Write-ADMBanner -ScriptName $ScriptName -IsEnd
