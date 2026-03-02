@@ -1,82 +1,82 @@
 <!--
   Article pour Ghost Blog
-  Titre : PS-ManageInactiveAD : une boite a outils PowerShell pour nettoyer votre Active Directory
-  Slug suggere : ps-manageinactivead-toolkit-powershell-active-directory
-  Tags suggeres : PowerShell, Active Directory, Windows Server, Sysadmin, Securite, Automation
-  Meta description : Decouvrez PS-ManageInactiveAD, une suite de 14 scripts PowerShell pour auditer, nettoyer et maintenir votre Active Directory. Compatible Server 2022 et 2025.
-  Image de couverture suggeree : un terminal PowerShell avec des lignes de commande AD, ou le logo Windows Server
+  Titre : PS-ManageInactiveAD : une boîte à outils PowerShell pour nettoyer votre Active Directory
+  Slug suggéré : ps-manageinactivead-toolkit-powershell-active-directory
+  Tags suggérés : PowerShell, Active Directory, Windows Server, Sysadmin, Sécurité, Automation
+  Meta description : Découvrez PS-ManageInactiveAD, une suite de 14 scripts PowerShell pour auditer, nettoyer et maintenir votre Active Directory. Compatible Server 2022 et 2025.
+  Image de couverture suggérée : un terminal PowerShell avec des lignes de commande AD, ou le logo Windows Server
 -->
 
-# PS-ManageInactiveAD : 14 scripts PowerShell pour reprendre le controle de votre Active Directory
+# PS-ManageInactiveAD : 14 scripts PowerShell pour reprendre le contrôle de votre Active Directory
 
-Qui n'a jamais ouvert la console Active Directory Users and Computers pour tomber sur des centaines de comptes jamais utilises, des groupes vides, et des objets ordinateur datant de l'ere Windows 7 ? Le menage AD, tout le monde sait qu'il faut le faire. Peu d'equipes le font regulierement.
+Qui n'a jamais ouvert la console Active Directory Users and Computers pour tomber sur des centaines de comptes jamais utilisés, des groupes vides, et des objets ordinateur datant de l'ère Windows 7 ? Le ménage AD, tout le monde sait qu'il faut le faire. Peu d'équipes le font régulièrement.
 
-**PS-ManageInactiveAD** est une boite a outils open source que j'ai retravaillee pour repondre a ce besoin. 14 scripts PowerShell, compatibles Windows Server 2022 et 2025, couvrant l'audit, le nettoyage et la surveillance de votre environnement AD.
+**PS-ManageInactiveAD** est une boîte à outils open source que j'ai retravaillée pour répondre à ce besoin. 14 scripts PowerShell, compatibles Windows Server 2022 et 2025, couvrant l'audit, le nettoyage et la surveillance de votre environnement AD.
 
 ---
 
-## Le probleme
+## Le problème
 
 Un Active Directory qui n'est pas entretenu, c'est :
 
-- **Un risque de securite** : des comptes inactifs sont des portes d'entree potentielles pour un attaquant
-- **Du bruit dans vos annuaires** : les recherches sont polluees par des objets obsoletes
-- **Des licences gaspillees** : des comptes actifs qui ne devraient plus l'etre
-- **Des audits douloureux** : impossible de repondre clairement a "qui a acces a quoi ?"
+- **Un risque de sécurité** : des comptes inactifs sont des portes d'entrée potentielles pour un attaquant
+- **Du bruit dans vos annuaires** : les recherches sont polluées par des objets obsolètes
+- **Des licences gaspillées** : des comptes actifs qui ne devraient plus l'être
+- **Des audits douloureux** : impossible de répondre clairement à "qui a accès à quoi ?"
 
-Le nettoyage manuel est fastidieux et sujet aux erreurs. Les scripts permettent de le systematiser.
+Le nettoyage manuel est fastidieux et sujet aux erreurs. Les scripts permettent de le systématiser.
 
 ---
 
-## Ce que contient la boite a outils
+## Ce que contient la boîte à outils
 
 ### Nettoyage AD
 
 | Script | Ce qu'il fait |
 |--------|--------------|
-| **Find-ADInactiveUsers** | Detecte les comptes utilisateurs qui ne se sont pas connectes depuis X jours. Peut desactiver, deplacer en quarantaine et supprimer. |
+| **Find-ADInactiveUsers** | Détecte les comptes utilisateurs qui ne se sont pas connectés depuis X jours. Peut désactiver, déplacer en quarantaine et supprimer. |
 | **Find-ADInactiveComputers** | Idem pour les objets ordinateur. |
-| **Find-ADEmptyGroups** | Liste les groupes de securite et de distribution sans aucun membre. |
+| **Find-ADEmptyGroups** | Liste les groupes de sécurité et de distribution sans aucun membre. |
 | **Find-ADEmptyOU** | Liste les OUs qui ne contiennent aucun objet. |
 
-### Audit securite
+### Audit sécurité
 
 | Script | Ce qu'il fait |
 |--------|--------------|
-| **Find-ADLockedAccounts** | Liste les comptes verrouilles, avec option de deverrouillage en masse. |
-| **Find-ADPasswordNeverExpires** | Detecte les comptes avec le flag "Le mot de passe n'expire jamais". |
-| **Find-ADStalePasswords** | Trouve les comptes dont le mot de passe n'a pas change depuis X jours. |
-| **Find-ADPrivilegedAccounts** | Audite les membres de Domain Admins, Enterprise Admins et 8 autres groupes privilegies. |
+| **Find-ADLockedAccounts** | Liste les comptes verrouillés, avec option de déverrouillage en masse. |
+| **Find-ADPasswordNeverExpires** | Détecte les comptes avec le flag "Le mot de passe n'expire jamais". |
+| **Find-ADStalePasswords** | Trouve les comptes dont le mot de passe n'a pas changé depuis X jours. |
+| **Find-ADPrivilegedAccounts** | Audite les membres de Domain Admins, Enterprise Admins et 8 autres groupes privilégiés. |
 
 ### Maintenance
 
 | Script | Ce qu'il fait |
 |--------|--------------|
-| **Find-ADDisabledInGroups** | Detecte les comptes desactives qui sont encore membres de groupes (risque de securite). |
-| **Find-ADObsoleteOS** | Liste les machines sous OS en fin de vie (XP a Server 2019). |
-| **Find-ADUnlinkedGPO** | Trouve les GPOs orphelines non liees a aucune OU. |
-| **Find-ADDuplicateSPN** | Detecte les SPNs en doublon qui cassent l'authentification Kerberos. |
+| **Find-ADDisabledInGroups** | Détecte les comptes désactivés qui sont encore membres de groupes (risque de sécurité). |
+| **Find-ADObsoleteOS** | Liste les machines sous OS en fin de vie (XP à Server 2019). |
+| **Find-ADUnlinkedGPO** | Trouve les GPOs orphelines non liées à aucune OU. |
+| **Find-ADDuplicateSPN** | Détecte les SPNs en doublon qui cassent l'authentification Kerberos. |
 
-### Sante AD
+### Santé AD
 
 | Script | Ce qu'il fait |
 |--------|--------------|
-| **Test-ADReplicationHealth** | Verifie la replication entre tous les controleurs de domaine. |
-| **Test-ADFSMORoles** | Audite le placement et la disponibilite des 5 roles FSMO. |
+| **Test-ADReplicationHealth** | Vérifie la réplication entre tous les contrôleurs de domaine. |
+| **Test-ADFSMORoles** | Audite le placement et la disponibilité des 5 rôles FSMO. |
 
 ---
 
 ## Philosophie de conception
 
-### Mode safe par defaut
+### Mode safe par défaut
 
-Chaque script genere un rapport CSV sans rien modifier. Les actions destructives (desactiver, supprimer) ne s'activent que si vous passez explicitement le switch correspondant :
+Chaque script génère un rapport CSV sans rien modifier. Les actions destructives (désactiver, supprimer) ne s'activent que si vous passez explicitement le switch correspondant :
 
 ```powershell
 # Rapport seul - rien ne bouge
 .\Find-ADInactiveUsers.ps1
 
-# On desactive
+# On désactive
 .\Find-ADInactiveUsers.ps1 -DisableUsers
 
 # On simule d'abord
@@ -85,23 +85,23 @@ Chaque script genere un rapport CSV sans rien modifier. Les actions destructives
 
 ### Workflow de quarantaine
 
-Plutot que de supprimer directement un compte, la bonne pratique c'est : **desactiver, deplacer, attendre, puis supprimer**. Les scripts supportent ce workflow nativement :
+Plutôt que de supprimer directement un compte, la bonne pratique c'est : **désactiver, déplacer, attendre, puis supprimer**. Les scripts supportent ce workflow nativement :
 
 ```powershell
-# Etape 1 : desactiver et deplacer en quarantaine
+# Étape 1 : désactiver et déplacer en quarantaine
 .\Find-ADInactiveUsers.ps1 -DisableUsers -QuarantineOU "OU=Quarantine,DC=corp,DC=local"
 
-# Etape 2 (30 jours plus tard) : supprimer depuis la quarantaine
+# Étape 2 (30 jours plus tard) : supprimer depuis la quarantaine
 .\Find-ADInactiveUsers.ps1 -SearchBase "OU=Quarantine,DC=corp,DC=local" -DeleteUsers
 ```
 
-### Parametres communs
+### Paramètres communs
 
-Tous les scripts partagent les memes parametres pour une experience homogene :
+Tous les scripts partagent les mêmes paramètres pour une expérience homogène :
 
-- **`-ReportFilePath`** : chemin du CSV (defaut `C:\tmp\`)
+- **`-ReportFilePath`** : chemin du CSV (défaut `C:\tmp\`)
 - **`-SearchBase`** / **`-ExcludeOU`** : cibler ou exclure des OUs
-- **`-EnableLogging`** : log horodate dans `C:\tmp\Logs\`
+- **`-EnableLogging`** : log horodaté dans `C:\tmp\Logs\`
 - **`-EmailTo`** / **`-SmtpServer`** : notification email automatique
 - **`-WhatIf`** / **`-Confirm`** : simulation et confirmation
 
@@ -109,7 +109,7 @@ Tous les scripts partagent les memes parametres pour une experience homogene :
 
 ## Mise en place
 
-### Prerequis
+### Prérequis
 
 - Windows Server 2022 ou 2025
 - PowerShell 5.1+
@@ -127,13 +127,13 @@ cd PS-ManageInactiveAD
 .\Find-ADInactiveUsers.ps1
 ```
 
-C'est tout. Pas de module a installer, pas de dependance complexe. Le seul fichier obligatoire est `ADManagement-Common.ps1` qui doit rester dans le meme repertoire que les scripts.
+C'est tout. Pas de module à installer, pas de dépendance complexe. Le seul fichier obligatoire est `ADManagement-Common.ps1` qui doit rester dans le même répertoire que les scripts.
 
 ---
 
 ## Automatisation
 
-Le vrai interet de ces scripts, c'est de les planifier. Voici un exemple de tache planifiee pour un rapport hebdomadaire :
+Le vrai intérêt de ces scripts, c'est de les planifier. Voici un exemple de tâche planifiée pour un rapport hebdomadaire :
 
 ```powershell
 $Action = New-ScheduledTaskAction -Execute 'powershell.exe' `
@@ -146,38 +146,38 @@ Register-ScheduledTask -TaskName 'AD-WeeklyReport' `
   -User 'DOMAIN\svc-admanagement'
 ```
 
-Tous les lundis matin a 6h, vous recevez un rapport des comptes inactifs par email. Simple et efficace.
+Tous les lundis matin à 6h, vous recevez un rapport des comptes inactifs par email. Simple et efficace.
 
 ---
 
-## Cas d'usage concret : le menage mensuel
+## Cas d'usage concret : le ménage mensuel
 
 Voici le workflow que je recommande sur un cycle de 4 semaines :
 
-**Semaine 1 - Audit securite** : lancer les scripts d'audit (comptes privilegies, mots de passe, SPNs, replication). Analyser les rapports.
+**Semaine 1 - Audit sécurité** : lancer les scripts d'audit (comptes privilégiés, mots de passe, SPNs, réplication). Analyser les rapports.
 
-**Semaine 2 - Nettoyage des comptes** : desactiver les comptes inactifs, les deplacer en quarantaine. Nettoyer les appartenances aux groupes des comptes desactives.
+**Semaine 2 - Nettoyage des comptes** : désactiver les comptes inactifs, les déplacer en quarantaine. Nettoyer les appartenances aux groupes des comptes désactivés.
 
-**Semaine 3 - Nettoyage structurel** : traiter les groupes vides, OUs vides, GPOs orphelines. Lister les machines sous OS obsolete.
+**Semaine 3 - Nettoyage structurel** : traiter les groupes vides, OUs vides, GPOs orphelines. Lister les machines sous OS obsolète.
 
-**Semaine 4 - Suppression** : apres validation des rapports des semaines precedentes, supprimer les objets en quarantaine.
+**Semaine 4 - Suppression** : après validation des rapports des semaines précédentes, supprimer les objets en quarantaine.
 
 ---
 
 ## Documentation
 
-Le projet inclut une documentation technique complete (disponible en Markdown, HTML et PDF) couvrant chaque script en detail : parametres, exemples, colonnes CSV, droits requis, et guide de depannage.
+Le projet inclut une documentation technique complète (disponible en Markdown, HTML et PDF) couvrant chaque script en détail : paramètres, exemples, colonnes CSV, droits requis, et guide de dépannage.
 
 ---
 
 ## Conclusion
 
-Un AD propre, c'est un AD plus sur et plus facile a administrer. Ces scripts n'ont pas vocation a remplacer une solution comme DVLS ou un SIEM, mais ils couvrent les operations de base que tout administrateur devrait automatiser.
+Un AD propre, c'est un AD plus sûr et plus facile à administrer. Ces scripts n'ont pas vocation à remplacer une solution comme DVLS ou un SIEM, mais ils couvrent les opérations de base que tout administrateur devrait automatiser.
 
-Le projet est open source et disponible sur GitHub. N'hesitez pas a l'adapter a vos besoins.
+Le projet est open source et disponible sur GitHub. N'hésitez pas à l'adapter à vos besoins.
 
 **Lien GitHub :** [https://github.com/SyNode-IT/PS-ManageInactiveAD](https://github.com/SyNode-IT/PS-ManageInactiveAD)
 
 ---
 
-*Tags : PowerShell, Active Directory, Windows Server 2022, Windows Server 2025, Sysadmin, Securite, Automation, Scripts*
+*Tags : PowerShell, Active Directory, Windows Server 2022, Windows Server 2025, Sysadmin, Sécurité, Automation, Scripts*
