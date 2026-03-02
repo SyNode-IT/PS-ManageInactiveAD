@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>PS-ManageInactiveAD - Documentation Technique v2.0</title>
+<style>
+  @page { margin: 1.5cm; size: A4; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 20px 30px;
+  }
+  h1 { font-size: 22pt; color: #0078d4; border-bottom: 3px solid #0078d4; padding-bottom: 8px; page-break-before: avoid; }
+  h2 { font-size: 16pt; color: #0078d4; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 30px; page-break-before: auto; }
+  h3 { font-size: 13pt; color: #333; margin-top: 20px; }
+  h4 { font-size: 11pt; color: #555; margin-top: 15px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 10pt; page-break-inside: avoid; }
+  th { background-color: #0078d4; color: white; padding: 6px 10px; text-align: left; }
+  td { padding: 5px 10px; border: 1px solid #ddd; }
+  tr:nth-child(even) { background-color: #f5f5f5; }
+  code { background-color: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: 'Cascadia Code', Consolas, monospace; font-size: 9.5pt; }
+  pre { background-color: #1e1e1e; color: #d4d4d4; padding: 12px 16px; border-radius: 5px; overflow-x: auto; font-size: 9pt; line-height: 1.4; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; color: inherit; }
+  blockquote { border-left: 4px solid #0078d4; margin: 10px 0; padding: 8px 16px; background: #f0f7ff; }
+  blockquote p { margin: 0; }
+  .toc { background: #f8f8f8; border: 1px solid #ddd; border-radius: 5px; padding: 15px 25px; margin: 20px 0; }
+  .toc a { text-decoration: none; color: #0078d4; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ul { list-style: none; padding-left: 20px; }
+  .toc > ul { padding-left: 0; }
+  .toc li { margin: 3px 0; }
+  .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 8px 16px; margin: 10px 0; }
+  .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 8px 16px; margin: 10px 0; }
+  .workflow-box { background: #f0f0f0; border: 1px solid #ccc; border-radius: 5px; padding: 15px; margin: 10px 0; font-family: Consolas, monospace; font-size: 9pt; white-space: pre-line; }
+  .header-meta { color: #666; font-size: 10pt; margin-bottom: 20px; }
+  @media print {
+    body { padding: 0; }
+    h2 { page-break-before: auto; }
+    pre, table, .workflow-box { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>PS-ManageInactiveAD</h1>
+<p class="header-meta">
+  <strong>Documentation Technique</strong> &mdash; Version 2.0<br>
+  Compatibilit&eacute; : Windows Server 2022, Windows Server 2025 (PowerShell 5.1+)<br>
+  Derni&egrave;re mise &agrave; jour : 2026
+</p>
+
+<div class="toc">
+<strong>Table des mati&egrave;res</strong>
+<ul>
+  <li><a href="#prerequis">1. Pr&eacute;requis</a></li>
+  <li><a href="#installation">2. Installation</a></li>
+  <li><a href="#architecture">3. Architecture</a></li>
+  <li><a href="#params">4. Param&egrave;tres communs</a></li>
+  <li><a href="#nettoyage">5. Scripts de nettoyage AD</a>
+    <ul>
+      <li><a href="#users">5.1 Find-ADInactiveUsers</a></li>
+      <li><a href="#computers">5.2 Find-ADInactiveComputers</a></li>
+      <li><a href="#groups">5.3 Find-ADEmptyGroups</a></li>
+      <li><a href="#ou">5.4 Find-ADEmptyOU</a></li>
+    </ul>
+  </li>
+  <li><a href="#securite">6. Scripts d'audit s&eacute;curit&eacute;</a>
+    <ul>
+      <li><a href="#locked">6.1 Find-ADLockedAccounts</a></li>
+      <li><a href="#pwdneverexpires">6.2 Find-ADPasswordNeverExpires</a></li>
+      <li><a href="#stalepwd">6.3 Find-ADStalePasswords</a></li>
+      <li><a href="#privileged">6.4 Find-ADPrivilegedAccounts</a></li>
+    </ul>
+  </li>
+  <li><a href="#maintenance">7. Scripts de maintenance</a>
+    <ul>
+      <li><a href="#disabledingroups">7.1 Find-ADDisabledInGroups</a></li>
+      <li><a href="#obsoleteos">7.2 Find-ADObsoleteOS</a></li>
+      <li><a href="#gpo">7.3 Find-ADUnlinkedGPO</a></li>
+      <li><a href="#spn">7.4 Find-ADDuplicateSPN</a></li>
+    </ul>
+  </li>
+  <li><a href="#sante">8. Scripts de sant&eacute; AD</a>
+    <ul>
+      <li><a href="#replication">8.1 Test-ADReplicationHealth</a></li>
+      <li><a href="#fsmo">8.2 Test-ADFSMORoles</a></li>
+    </ul>
+  </li>
+  <li><a href="#workflow">9. Workflow de nettoyage recommand&eacute;</a></li>
+  <li><a href="#planification">10. Planification des t&acirc;ches</a></li>
+  <li><a href="#depannage">11. D&eacute;pannage</a></li>
+</ul>
+</div>
+
+<!-- ========================================== -->
+<h2 id="prerequis">1. Pr&eacute;requis</h2>
+
+<h3>Logiciels requis</h3>
+<table>
+  <tr><th>Composant</th><th>Requis</th><th>V&eacute;rification</th></tr>
+  <tr><td>PowerShell 5.1+</td><td>Oui</td><td><code>$PSVersionTable.PSVersion</code></td></tr>
+  <tr><td>Module ActiveDirectory</td><td>Oui</td><td><code>Get-Module -ListAvailable ActiveDirectory</code></td></tr>
+  <tr><td>Module GroupPolicy</td><td>Pour Find-ADUnlinkedGPO</td><td><code>Get-Module -ListAvailable GroupPolicy</code></td></tr>
+  <tr><td>RSAT</td><td>Oui</td><td>Via Server Manager ou <code>Add-WindowsCapability</code></td></tr>
+</table>
+
+<h3>Installation RSAT</h3>
+<h4>Sur Windows Server 2022/2025 :</h4>
+<pre><code>Install-WindowsFeature -Name RSAT-AD-PowerShell
+Install-WindowsFeature -Name GPMC    # Pour Find-ADUnlinkedGPO</code></pre>
+
+<h4>Sur Windows 10/11 :</h4>
+<pre><code>Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
+Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0</code></pre>
+
+<h3>Droits requis</h3>
+<table>
+  <tr><th>Action</th><th>Droit minimum</th></tr>
+  <tr><td>Rapport (lecture seule)</td><td>Domain Users / Account Operators</td></tr>
+  <tr><td>D&eacute;sactiver des comptes</td><td>Account Operators / Delegated Admin</td></tr>
+  <tr><td>Supprimer des objets</td><td>Domain Admins (ou d&eacute;l&eacute;gation sp&eacute;cifique)</td></tr>
+  <tr><td>GPO management</td><td>Group Policy Creator Owners</td></tr>
+  <tr><td>R&eacute;plication / FSMO</td><td>Domain Admins</td></tr>
+</table>
+
+<!-- ========================================== -->
+<h2 id="installation">2. Installation</h2>
+
+<ol>
+  <li>Copier l'ensemble du dossier sur un serveur membre ou un contr&ocirc;leur de domaine.</li>
+  <li>V&eacute;rifier que tous les fichiers sont pr&eacute;sents :</li>
+</ol>
+
+<pre><code>PS-ManageInactiveAD/
+  ADManagement-Common.ps1          &larr; Fichier obligatoire (fonctions partag&eacute;es)
+  Find-ADInactiveUsers.ps1
+  Find-ADInactiveComputers.ps1
+  Find-ADEmptyGroups.ps1
+  Find-ADEmptyOU.ps1
+  Find-ADLockedAccounts.ps1
+  Find-ADPasswordNeverExpires.ps1
+  Find-ADStalePasswords.ps1
+  Find-ADPrivilegedAccounts.ps1
+  Find-ADDisabledInGroups.ps1
+  Find-ADObsoleteOS.ps1
+  Find-ADUnlinkedGPO.ps1
+  Find-ADDuplicateSPN.ps1
+  Test-ADReplicationHealth.ps1
+  Test-ADFSMORoles.ps1</code></pre>
+
+<ol start="3">
+  <li>V&eacute;rifier la politique d'ex&eacute;cution PowerShell :</li>
+</ol>
+<pre><code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code></pre>
+
+<div class="warning">
+  <strong>IMPORTANT :</strong> Le fichier <code>ADManagement-Common.ps1</code> doit TOUJOURS &ecirc;tre dans le m&ecirc;me r&eacute;pertoire que les scripts. Tous les scripts en d&eacute;pendent.
+</div>
+
+<!-- ========================================== -->
+<h2 id="architecture">3. Architecture</h2>
+
+<h3>Fichier commun : ADManagement-Common.ps1</h3>
+<table>
+  <tr><th>Fonction</th><th>R&ocirc;le</th></tr>
+  <tr><td><code>Write-ADMLog</code></td><td>&Eacute;criture horodat&eacute;e console + fichier de log</td></tr>
+  <tr><td><code>Start-ADMLogging</code> / <code>Stop-ADMLogging</code></td><td>D&eacute;marrage/arr&ecirc;t du logging fichier</td></tr>
+  <tr><td><code>Export-ADMReport</code></td><td>Export CSV avec cr&eacute;ation auto du r&eacute;pertoire</td></tr>
+  <tr><td><code>Send-ADMReport</code></td><td>Envoi du rapport par email SMTP</td></tr>
+  <tr><td><code>Test-ADMExcludedOU</code></td><td>V&eacute;rification d'exclusion d'OU</td></tr>
+  <tr><td><code>Move-ADMToQuarantine</code></td><td>D&eacute;placement vers OU de quarantaine</td></tr>
+  <tr><td><code>Write-ADMBanner</code></td><td>Bandeau de d&eacute;but/fin d'ex&eacute;cution</td></tr>
+</table>
+
+<h3>R&eacute;pertoires par d&eacute;faut</h3>
+<table>
+  <tr><th>Chemin</th><th>Contenu</th></tr>
+  <tr><td><code>C:\tmp\</code></td><td>Rapports CSV</td></tr>
+  <tr><td><code>C:\tmp\Logs\</code></td><td>Fichiers de log (si <code>-EnableLogging</code>)</td></tr>
+</table>
+
+<!-- ========================================== -->
+<h2 id="params">4. Param&egrave;tres communs</h2>
+
+<h3>Rapport</h3>
+<table>
+  <tr><th>Param&egrave;tre</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-ReportFilePath</code></td><td>String</td><td><code>C:\tmp\&lt;Script&gt;.csv</code></td><td>Chemin complet du fichier CSV</td></tr>
+</table>
+
+<h3>Logging</h3>
+<table>
+  <tr><th>Param&egrave;tre</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-EnableLogging</code></td><td>Switch</td><td><code>$false</code></td><td>Active l'&eacute;criture de logs dans <code>C:\tmp\Logs\</code></td></tr>
+</table>
+
+<h3>Email</h3>
+<table>
+  <tr><th>Param&egrave;tre</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-EmailTo</code></td><td>String[]</td><td>&mdash;</td><td>Adresse(s) destinataire(s)</td></tr>
+  <tr><td><code>-SmtpServer</code></td><td>String</td><td>&mdash;</td><td>Serveur SMTP</td></tr>
+  <tr><td><code>-EmailFrom</code></td><td>String</td><td><code>ADManagement@&lt;domaine&gt;</code></td><td>Adresse exp&eacute;diteur</td></tr>
+</table>
+
+<div class="info">L'email n'est envoy&eacute; que si <code>-EmailTo</code> ET <code>-SmtpServer</code> sont sp&eacute;cifi&eacute;s.</div>
+
+<h3>Filtrage</h3>
+<table>
+  <tr><th>Param&egrave;tre</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>-SearchBase</code></td><td>String</td><td>Chemin LDAP pour restreindre la recherche</td></tr>
+  <tr><td><code>-ExcludeOU</code></td><td>String[]</td><td>Tableau de DN d'OUs &agrave; exclure</td></tr>
+</table>
+
+<h3>S&eacute;curit&eacute; (-WhatIf / -Confirm)</h3>
+<pre><code># Simuler sans rien modifier
+.\Find-ADInactiveUsers.ps1 -DeleteUsers -WhatIf
+
+# Confirmation par item
+.\Find-ADInactiveUsers.ps1 -DisableUsers -Confirm</code></pre>
+
+<!-- ========================================== -->
+<h2 id="nettoyage">5. Scripts de nettoyage AD</h2>
+
+<h3 id="users">5.1 Find-ADInactiveUsers</h3>
+<p><strong>But :</strong> Trouver et g&eacute;rer les comptes utilisateurs inactifs.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-SearchScope</code></td><td><code>All</code></td><td><code>All</code>, <code>OnlyInactiveUsers</code>, <code>OnlyServiceAccounts</code>, <code>OnlyNeverLoggedOn</code>, <code>AllExceptServiceAccounts</code>, <code>AllExceptNeverLoggedOn</code></td></tr>
+  <tr><td><code>-DaysInactive</code></td><td><code>90</code></td><td>Jours d'inactivit&eacute;</td></tr>
+  <tr><td><code>-ServiceAccountIdentifier</code></td><td><code>svc</code></td><td>Pr&eacute;fixe/suffixe des comptes de service</td></tr>
+  <tr><td><code>-QuarantineOU</code></td><td>&mdash;</td><td>OU de quarantaine pour les comptes d&eacute;sactiv&eacute;s</td></tr>
+  <tr><td><code>-DisableUsers</code></td><td><code>$false</code></td><td>D&eacute;sactive les comptes inactifs</td></tr>
+  <tr><td><code>-DeleteUsers</code></td><td><code>$false</code></td><td>Supprime les comptes inactifs</td></tr>
+</table>
+
+<pre><code># Rapport simple
+.\Find-ADInactiveUsers.ps1
+
+# Rapport 60 jours dans l'OU Paris
+.\Find-ADInactiveUsers.ps1 -DaysInactive 60 -SearchBase "OU=Paris,DC=corp,DC=local"
+
+# D&eacute;sactiver et d&eacute;placer en quarantaine
+.\Find-ADInactiveUsers.ps1 -DisableUsers -QuarantineOU "OU=Disabled Users,DC=corp,DC=local"
+
+# Exclure les VIP
+.\Find-ADInactiveUsers.ps1 -ExcludeOU "OU=VIP,DC=corp,DC=local"</code></pre>
+
+<p><strong>Colonnes CSV :</strong> <code>Username</code>, <code>Name</code>, <code>LastLogonDate</code>, <code>DistinguishedName</code></p>
+
+<!-- 5.2 -->
+<h3 id="computers">5.2 Find-ADInactiveComputers</h3>
+<p><strong>But :</strong> Trouver et g&eacute;rer les objets ordinateur inactifs.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-SearchScope</code></td><td><code>All</code></td><td><code>All</code>, <code>OnlyInactiveComputers</code>, <code>OnlyNeverLoggedOn</code></td></tr>
+  <tr><td><code>-DaysInactive</code></td><td><code>90</code></td><td>Jours d'inactivit&eacute;</td></tr>
+  <tr><td><code>-QuarantineOU</code></td><td>&mdash;</td><td>OU de quarantaine</td></tr>
+  <tr><td><code>-DisableObjects</code></td><td><code>$false</code></td><td>D&eacute;sactive les ordinateurs inactifs</td></tr>
+  <tr><td><code>-DeleteObjects</code></td><td><code>$false</code></td><td>Supprime les ordinateurs inactifs</td></tr>
+</table>
+
+<pre><code># Rapport des postes inactifs depuis 120 jours
+.\Find-ADInactiveComputers.ps1 -DaysInactive 120
+
+# D&eacute;sactiver et d&eacute;placer en quarantaine
+.\Find-ADInactiveComputers.ps1 -DisableObjects -QuarantineOU "OU=Disabled Computers,DC=corp,DC=local"</code></pre>
+
+<!-- 5.3 -->
+<h3 id="groups">5.3 Find-ADEmptyGroups</h3>
+<p><strong>But :</strong> Trouver et g&eacute;rer les groupes AD vides.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-SearchScope</code></td><td>Domaine entier</td><td>Chemin LDAP</td></tr>
+  <tr><td><code>-DeleteObjects</code></td><td><code>$false</code></td><td>Supprime les groupes vides</td></tr>
+</table>
+
+<pre><code># Rapport
+.\Find-ADEmptyGroups.ps1
+
+# Supprimer (simulation)
+.\Find-ADEmptyGroups.ps1 -DeleteObjects -WhatIf</code></pre>
+
+<!-- 5.4 -->
+<h3 id="ou">5.4 Find-ADEmptyOU</h3>
+<p><strong>But :</strong> Trouver et g&eacute;rer les OUs vides.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-SearchScope</code></td><td>Domaine entier</td><td>Chemin LDAP</td></tr>
+  <tr><td><code>-DeleteObjects</code></td><td><code>$false</code></td><td>Supprime les OUs vides</td></tr>
+</table>
+
+<div class="warning">Les OUs prot&eacute;g&eacute;es contre la suppression accidentelle g&eacute;n&egrave;reront une erreur.</div>
+
+<!-- ========================================== -->
+<h2 id="securite">6. Scripts d'audit s&eacute;curit&eacute;</h2>
+
+<h3 id="locked">6.1 Find-ADLockedAccounts</h3>
+<p><strong>But :</strong> Trouver et optionnellement d&eacute;verrouiller les comptes verrouill&eacute;s.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-UnlockAccounts</code></td><td><code>$false</code></td><td>D&eacute;verrouille les comptes</td></tr>
+</table>
+
+<pre><code># Lister les comptes verrouill&eacute;s
+.\Find-ADLockedAccounts.ps1
+
+# D&eacute;verrouiller
+.\Find-ADLockedAccounts.ps1 -UnlockAccounts</code></pre>
+
+<p><strong>CSV :</strong> <code>Username</code>, <code>Name</code>, <code>LastLogonDate</code>, <code>LockoutTime</code>, <code>LastBadPasswordAttempt</code>, <code>DistinguishedName</code></p>
+
+<!-- 6.2 -->
+<h3 id="pwdneverexpires">6.2 Find-ADPasswordNeverExpires</h3>
+<p><strong>But :</strong> Trouver les comptes avec le flag &laquo; Mot de passe n'expire jamais &raquo;.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-IncludeServiceAccounts</code></td><td><code>$false</code></td><td>Inclure les comptes de service</td></tr>
+  <tr><td><code>-ServiceAccountIdentifier</code></td><td><code>svc</code></td><td>Identifiant des comptes de service</td></tr>
+  <tr><td><code>-RemoveFlag</code></td><td><code>$false</code></td><td>Retire le flag PasswordNeverExpires</td></tr>
+</table>
+
+<pre><code># Rapport
+.\Find-ADPasswordNeverExpires.ps1
+
+# Retirer le flag (simulation)
+.\Find-ADPasswordNeverExpires.ps1 -RemoveFlag -WhatIf</code></pre>
+
+<!-- 6.3 -->
+<h3 id="stalepwd">6.3 Find-ADStalePasswords</h3>
+<p><strong>But :</strong> Trouver les comptes dont le mot de passe est ancien.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-DaysOld</code></td><td><code>180</code></td><td>Jours depuis le dernier changement</td></tr>
+  <tr><td><code>-ForceChangeAtLogon</code></td><td><code>$false</code></td><td>Force le changement au prochain logon</td></tr>
+</table>
+
+<pre><code># Mots de passe de plus d'un an
+.\Find-ADStalePasswords.ps1 -DaysOld 365
+
+# Forcer le changement (simulation)
+.\Find-ADStalePasswords.ps1 -DaysOld 90 -ForceChangeAtLogon -WhatIf</code></pre>
+
+<p><strong>CSV :</strong> <code>Username</code>, <code>Name</code>, <code>PasswordLastSet</code>, <code>PasswordAgeDays</code>, <code>LastLogonDate</code>, <code>Description</code>, <code>DistinguishedName</code></p>
+
+<!-- 6.4 -->
+<h3 id="privileged">6.4 Find-ADPrivilegedAccounts</h3>
+<p><strong>But :</strong> Auditer les membres des groupes privil&eacute;gi&eacute;s.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-Groups</code></td><td>10 groupes privil&eacute;gi&eacute;s par d&eacute;faut</td><td>Groupes &agrave; auditer</td></tr>
+  <tr><td><code>-IncludeNested</code></td><td><code>$false</code></td><td>R&eacute;solution r&eacute;cursive des groupes imbriqu&eacute;s</td></tr>
+</table>
+
+<p><strong>Groupes audit&eacute;s par d&eacute;faut :</strong> Domain Admins, Enterprise Admins, Schema Admins, Administrators, Account Operators, Backup Operators, Server Operators, Print Operators, DnsAdmins, Group Policy Creator Owners</p>
+
+<pre><code># Audit complet avec r&eacute;solution r&eacute;cursive
+.\Find-ADPrivilegedAccounts.ps1 -IncludeNested
+
+# Groupes sp&eacute;cifiques
+.\Find-ADPrivilegedAccounts.ps1 -Groups "Domain Admins","IT-Admins"</code></pre>
+
+<!-- ========================================== -->
+<h2 id="maintenance">7. Scripts de maintenance</h2>
+
+<h3 id="disabledingroups">7.1 Find-ADDisabledInGroups</h3>
+<p><strong>But :</strong> Trouver les comptes d&eacute;sactiv&eacute;s encore membres de groupes.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-RemoveMemberships</code></td><td><code>$false</code></td><td>Retire les appartenances aux groupes</td></tr>
+</table>
+
+<pre><code># Rapport
+.\Find-ADDisabledInGroups.ps1
+
+# Retirer les appartenances (simulation)
+.\Find-ADDisabledInGroups.ps1 -RemoveMemberships -WhatIf</code></pre>
+
+<!-- 7.2 -->
+<h3 id="obsoleteos">7.2 Find-ADObsoleteOS</h3>
+<p><strong>But :</strong> Trouver les ordinateurs sous OS obsol&egrave;tes.</p>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-ObsoletePatterns</code></td><td>XP &agrave; Server 2019</td><td>Patterns d'OS consid&eacute;r&eacute;s obsol&egrave;tes</td></tr>
+</table>
+
+<div class="info">Adapter <code>-ObsoletePatterns</code> selon votre politique de cycle de vie. Si Server 2019 est encore support&eacute;, retirez-le de la liste.</div>
+
+<pre><code># Rapport par d&eacute;faut
+.\Find-ADObsoleteOS.ps1
+
+# Uniquement Server 2012 et 2016
+.\Find-ADObsoleteOS.ps1 -ObsoletePatterns "*Server 2012*","*Server 2016*"</code></pre>
+
+<!-- 7.3 -->
+<h3 id="gpo">7.3 Find-ADUnlinkedGPO</h3>
+<p><strong>But :</strong> Trouver les GPO orphelines (non li&eacute;es).</p>
+
+<div class="warning"><strong>Pr&eacute;requis :</strong> Module <code>GroupPolicy</code> (GPMC / RSAT)</div>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-ExcludeGPO</code></td><td>Default Domain Policy, Default DC Policy</td><td>GPOs &agrave; exclure</td></tr>
+  <tr><td><code>-DeleteObjects</code></td><td><code>$false</code></td><td>Supprime les GPOs non li&eacute;es</td></tr>
+</table>
+
+<pre><code># Rapport
+.\Find-ADUnlinkedGPO.ps1
+
+# Supprimer (simulation)
+.\Find-ADUnlinkedGPO.ps1 -DeleteObjects -WhatIf</code></pre>
+
+<!-- 7.4 -->
+<h3 id="spn">7.4 Find-ADDuplicateSPN</h3>
+<p><strong>But :</strong> D&eacute;tecter les SPN en doublon (causent des &eacute;checs Kerberos).</p>
+
+<p>Ce script est <strong>en lecture seule</strong>. Correction manuelle avec :</p>
+<pre><code>setspn -d HTTP/serveur.corp.local COMPTE_A_CORRIGER</code></pre>
+
+<!-- ========================================== -->
+<h2 id="sante">8. Scripts de sant&eacute; AD</h2>
+
+<h3 id="replication">8.1 Test-ADReplicationHealth</h3>
+<p><strong>But :</strong> V&eacute;rifier la r&eacute;plication AD entre tous les DCs.</p>
+<p>Statuts possibles : <code>OK</code>, <code>ERROR</code>, <code>UNREACHABLE</code></p>
+
+<pre><code># V&eacute;rification avec notification email
+.\Test-ADReplicationHealth.ps1 -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"</code></pre>
+
+<p><strong>CSV :</strong> <code>SourceDC</code>, <code>SourceSite</code>, <code>Partner</code>, <code>LastReplicationSuccess</code>, <code>MinutesSinceReplication</code>, <code>ConsecutiveFailures</code>, <code>Status</code></p>
+
+<!-- 8.2 -->
+<h3 id="fsmo">8.2 Test-ADFSMORoles</h3>
+<p><strong>But :</strong> Auditer les 5 r&ocirc;les FSMO et l'&eacute;tat des DCs.</p>
+
+<p><strong>R&ocirc;les v&eacute;rifi&eacute;s :</strong></p>
+<ul>
+  <li>Schema Master (For&ecirc;t)</li>
+  <li>Domain Naming Master (For&ecirc;t)</li>
+  <li>PDC Emulator (Domaine)</li>
+  <li>RID Master (Domaine)</li>
+  <li>Infrastructure Master (Domaine)</li>
+</ul>
+
+<pre><code>.\Test-ADFSMORoles.ps1 -EnableLogging</code></pre>
+
+<!-- ========================================== -->
+<h2 id="workflow">9. Workflow de nettoyage recommand&eacute;</h2>
+
+<h3>Workflow mensuel</h3>
+<div class="workflow-box">
+<strong>Semaine 1 : AUDIT</strong>
+  1. Find-ADPrivilegedAccounts       &rarr; V&eacute;rifier les comptes &agrave; privil&egrave;ges
+  2. Find-ADPasswordNeverExpires     &rarr; Identifier les risques
+  3. Find-ADStalePasswords           &rarr; Mots de passe anciens
+  4. Find-ADDuplicateSPN             &rarr; Int&eacute;grit&eacute; Kerberos
+  5. Test-ADReplicationHealth        &rarr; R&eacute;plication
+  6. Test-ADFSMORoles                &rarr; R&ocirc;les FSMO
+
+<strong>Semaine 2 : NETTOYAGE OBJETS</strong>
+  1. Find-ADInactiveUsers -DisableUsers -QuarantineOU "..."
+  2. Find-ADInactiveComputers -DisableObjects -QuarantineOU "..."
+  3. Find-ADDisabledInGroups -RemoveMemberships
+
+<strong>Semaine 3 : NETTOYAGE STRUCTURE</strong>
+  1. Find-ADEmptyGroups              &rarr; Groupes vides
+  2. Find-ADEmptyOU                  &rarr; OUs vides
+  3. Find-ADUnlinkedGPO              &rarr; GPOs orphelines
+  4. Find-ADObsoleteOS               &rarr; OS obsol&egrave;tes
+
+<strong>Semaine 4 : SUPPRESSION (apr&egrave;s validation)</strong>
+  1. Find-ADInactiveUsers -SearchBase "OU=Quarantine,..." -DeleteUsers
+  2. Find-ADInactiveComputers -SearchBase "OU=Quarantine,..." -DeleteObjects
+  3. Find-ADEmptyGroups -DeleteObjects
+</div>
+
+<h3>Cycle de vie d'un compte utilisateur</h3>
+<div class="workflow-box">
+       Compte Actif
+            |
+    (Inactif &gt; 90 jours)
+            |
+            v
+  D&eacute;sactiver  (-DisableUsers)
+            |
+  D&eacute;placer    (-QuarantineOU "OU=Disabled,...")
+            |
+    (Attendre 30 jours)
+            |
+            v
+  Supprimer  (-DeleteUsers -SearchBase "OU=Disabled,...")
+</div>
+
+<!-- ========================================== -->
+<h2 id="planification">10. Planification des t&acirc;ches</h2>
+
+<h3>T&acirc;che planifi&eacute;e hebdomadaire</h3>
+<pre><code>$Action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\Find-ADInactiveUsers.ps1" -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"'
+
+$Trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At '06:00'
+
+$Settings = New-ScheduledTaskSettingsSet -RunOnlyIfNetworkAvailable -StartWhenAvailable
+
+Register-ScheduledTask -TaskName 'AD-InactiveUsersReport' `
+  -Action $Action -Trigger $Trigger -Settings $Settings `
+  -User 'DOMAIN\svc-admanagement' -Password 'MotDePasse' `
+  -Description 'Rapport hebdomadaire des utilisateurs inactifs'</code></pre>
+
+<h3>Script d'ex&eacute;cution group&eacute;e</h3>
+<pre><code># RunAllReports.ps1
+$ScriptPath = 'C:\Scripts\PS-ManageInactiveAD'
+$CommonParams = @{
+  EnableLogging = $true
+  EmailTo       = 'admin@corp.local'
+  SmtpServer    = 'smtp.corp.local'
+}
+
+& "$ScriptPath\Find-ADInactiveUsers.ps1" @CommonParams
+& "$ScriptPath\Find-ADInactiveComputers.ps1" @CommonParams
+& "$ScriptPath\Find-ADEmptyGroups.ps1" @CommonParams
+& "$ScriptPath\Find-ADEmptyOU.ps1" @CommonParams
+& "$ScriptPath\Find-ADLockedAccounts.ps1" @CommonParams
+& "$ScriptPath\Find-ADPasswordNeverExpires.ps1" @CommonParams
+& "$ScriptPath\Find-ADStalePasswords.ps1" @CommonParams
+& "$ScriptPath\Find-ADPrivilegedAccounts.ps1" @CommonParams
+& "$ScriptPath\Find-ADDisabledInGroups.ps1" @CommonParams
+& "$ScriptPath\Find-ADObsoleteOS.ps1" @CommonParams
+& "$ScriptPath\Find-ADUnlinkedGPO.ps1" @CommonParams
+& "$ScriptPath\Find-ADDuplicateSPN.ps1" @CommonParams
+& "$ScriptPath\Test-ADReplicationHealth.ps1" @CommonParams
+& "$ScriptPath\Test-ADFSMORoles.ps1" @CommonParams</code></pre>
+
+<!-- ========================================== -->
+<h2 id="depannage">11. D&eacute;pannage</h2>
+
+<h3>Erreurs courantes</h3>
+<table>
+  <tr><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td><code>Required file not found: ADManagement-Common.ps1</code></td><td>Fichier commun absent</td><td>V&eacute;rifier que le fichier est dans le m&ecirc;me dossier</td></tr>
+  <tr><td><code>The term 'Get-ADUser' is not recognized</code></td><td>Module AD absent</td><td><code>Install-WindowsFeature RSAT-AD-PowerShell</code></td></tr>
+  <tr><td><code>Access is denied</code></td><td>Droits insuffisants</td><td>Ex&eacute;cuter avec un compte d&eacute;l&eacute;gu&eacute;</td></tr>
+  <tr><td><code>Unable to contact the server</code></td><td>DC injoignable</td><td>V&eacute;rifier r&eacute;seau et DNS</td></tr>
+  <tr><td><code>Protect from Accidental Deletion</code></td><td>OU prot&eacute;g&eacute;e</td><td>Retirer la protection dans ADUC</td></tr>
+  <tr><td><code>The term 'Get-GPO' is not recognized</code></td><td>Module GroupPolicy absent</td><td><code>Install-WindowsFeature GPMC</code></td></tr>
+</table>
+
+<h3>Limitations connues</h3>
+<ul>
+  <li><strong>LastLogonDate</strong> : Bas&eacute;e sur <code>LastLogonTimestamp</code>, r&eacute;pliqu&eacute;e tous les 9-14 jours entre DCs. Pour une valeur pr&eacute;cise, interroger <code>LastLogon</code> sur chaque DC.</li>
+  <li><strong>Send-MailMessage</strong> : Obsol&egrave;te dans PowerShell 7+ mais fonctionnelle. Pour le long terme, envisager Microsoft Graph API.</li>
+  <li><strong>gMSA/MSA</strong> : Non distingu&eacute;s des comptes classiques. Utiliser <code>-ExcludeOU</code> pour les exclure.</li>
+</ul>
+
+<h3>V&eacute;rifier les logs</h3>
+<pre><code># Lister les fichiers de log
+Get-ChildItem C:\tmp\Logs\ -Filter *.log | Sort-Object LastWriteTime -Descending
+
+# Lire le dernier log
+Get-Content (Get-ChildItem C:\tmp\Logs\ -Filter *.log | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName</code></pre>
+
+<hr>
+<p style="text-align:center; color:#888; font-size:9pt;">
+  PS-ManageInactiveAD v2.0 &mdash; Documentation g&eacute;n&eacute;r&eacute;e en 2026<br>
+  Pour g&eacute;n&eacute;rer un PDF : ouvrir ce fichier dans un navigateur &rarr; Ctrl+P &rarr; Enregistrer en PDF
+</p>
+
+</body>
+</html>
