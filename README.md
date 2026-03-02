@@ -1,8 +1,8 @@
 # PS-ManageInactiveAD
 
-## Boite a outils de gestion Active Directory
+## Boîte à outils de gestion Active Directory
 
-Suite complete de scripts PowerShell pour auditer, nettoyer et maintenir un environnement Active Directory.
+Suite complète de scripts PowerShell pour auditer, nettoyer et maintenir un environnement Active Directory.
 
 **Compatible :** Windows Server 2022, Windows Server 2025 (PowerShell 5.1+)
 
@@ -11,34 +11,34 @@ Suite complete de scripts PowerShell pour auditer, nettoyer et maintenir un envi
 ### Nettoyage AD
 | Script | Description | Actions |
 |--------|-------------|---------|
-| `Find-ADInactiveUsers.ps1` | Utilisateurs inactifs | Rapport, Desactiver, Quarantaine, Supprimer |
-| `Find-ADInactiveComputers.ps1` | Ordinateurs inactifs | Rapport, Desactiver, Quarantaine, Supprimer |
+| `Find-ADInactiveUsers.ps1` | Utilisateurs inactifs | Rapport, Désactiver, Quarantaine, Supprimer |
+| `Find-ADInactiveComputers.ps1` | Ordinateurs inactifs | Rapport, Désactiver, Quarantaine, Supprimer |
 | `Find-ADEmptyGroups.ps1` | Groupes vides | Rapport, Supprimer |
 | `Find-ADEmptyOU.ps1` | OUs vides | Rapport, Supprimer |
 
-### Audit securite
+### Audit sécurité
 | Script | Description | Actions |
 |--------|-------------|---------|
-| `Find-ADLockedAccounts.ps1` | Comptes verrouilles | Rapport, Deverrouiller |
+| `Find-ADLockedAccounts.ps1` | Comptes verrouillés | Rapport, Déverrouiller |
 | `Find-ADPasswordNeverExpires.ps1` | Mots de passe non-expirants | Rapport, Retirer le flag |
 | `Find-ADStalePasswords.ps1` | Mots de passe anciens | Rapport, Forcer le changement |
-| `Find-ADPrivilegedAccounts.ps1` | Comptes privilegies | Rapport (lecture seule) |
+| `Find-ADPrivilegedAccounts.ps1` | Comptes privilégiés | Rapport (lecture seule) |
 
 ### Maintenance
 | Script | Description | Actions |
 |--------|-------------|---------|
-| `Find-ADDisabledInGroups.ps1` | Comptes desactives dans des groupes | Rapport, Retirer les appartenances |
-| `Find-ADObsoleteOS.ps1` | OS obsoletes | Rapport (lecture seule) |
+| `Find-ADDisabledInGroups.ps1` | Comptes désactivés dans des groupes | Rapport, Retirer les appartenances |
+| `Find-ADObsoleteOS.ps1` | OS obsolètes | Rapport (lecture seule) |
 | `Find-ADUnlinkedGPO.ps1` | GPOs orphelines | Rapport, Supprimer |
-| `Find-ADDuplicateSPN.ps1` | SPNs dupliques | Rapport (lecture seule) |
+| `Find-ADDuplicateSPN.ps1` | SPNs dupliqués | Rapport (lecture seule) |
 
-### Sante AD
+### Santé AD
 | Script | Description |
 |--------|-------------|
-| `Test-ADReplicationHealth.ps1` | Etat de la replication AD |
-| `Test-ADFSMORoles.ps1` | Roles FSMO et DCs |
+| `Test-ADReplicationHealth.ps1` | État de la réplication AD |
+| `Test-ADFSMORoles.ps1` | Rôles FSMO et DCs |
 
-## Prerequis
+## Prérequis
 
 - Windows Server 2022 ou 2025 (ou Windows 10/11 avec RSAT)
 - PowerShell 5.1+
@@ -57,41 +57,44 @@ Install-WindowsFeature -Name GPMC
 # Rapport simple (mode safe - aucune modification)
 .\Find-ADInactiveUsers.ps1
 
-# Rapport avec chemin personnalise
+# Rapport avec chemin personnalisé
 .\Find-ADInactiveUsers.ps1 -ReportFilePath 'C:\tmp\MonRapport.csv'
 
 # Simuler une action sans rien modifier
 .\Find-ADInactiveUsers.ps1 -DisableUsers -WhatIf
 
-# Desactiver + deplacer en quarantaine
+# Désactiver + déplacer en quarantaine
 .\Find-ADInactiveUsers.ps1 -DisableUsers -QuarantineOU "OU=Disabled,DC=corp,DC=local"
 
 # Avec logging et notification email
 .\Find-ADInactiveUsers.ps1 -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"
 ```
 
-## Parametres communs a tous les scripts
+## Paramètres communs à tous les scripts
 
-| Parametre | Description |
+| Paramètre | Description |
 |-----------|-------------|
-| `-ReportFilePath` | Chemin du rapport CSV (defaut: `C:\tmp\`) |
+| `-ReportFilePath` | Chemin du rapport CSV (défaut : `C:\tmp\`) |
 | `-EnableLogging` | Active les logs dans `C:\tmp\Logs\` |
 | `-EmailTo` / `-SmtpServer` | Notification email |
-| `-SearchBase` | Restreindre la recherche a une OU |
-| `-ExcludeOU` | Exclure des OUs des resultats |
+| `-SearchBase` | Restreindre la recherche à une OU |
+| `-ExcludeOU` | Exclure des OUs des résultats |
 | `-WhatIf` | Simuler les actions |
 | `-Confirm` | Confirmation par item |
 
 ## Fichier commun obligatoire
 
-Le fichier `ADManagement-Common.ps1` doit TOUJOURS etre dans le meme repertoire que les scripts. Il contient les fonctions partagees (logging, export CSV, email, quarantaine).
+Le fichier `ADManagement-Common.ps1` doit **toujours** être dans le même répertoire que les scripts. Il contient les fonctions partagées (logging, export CSV, email, quarantaine).
 
 ## Documentation
 
-- **Markdown** : `Documentation.md`
-- **PDF** : Ouvrir `Documentation.html` dans un navigateur > Ctrl+P > Enregistrer en PDF
+La documentation complète est disponible en trois formats :
 
-La documentation complete inclut : parametres detailles, exemples, workflow de nettoyage recommande, planification des taches, et guide de depannage.
+- **Markdown** : [`Documentation.md`](Documentation.md)
+- **HTML** : [`Documentation.html`](Documentation.html)
+- **PDF** : [`Documentation.pdf`](Documentation.pdf)
+
+Elle couvre : paramètres détaillés de chaque script, exemples d'utilisation, workflow de nettoyage recommandé, planification des tâches, et guide de dépannage.
 
 ## Licence
 
