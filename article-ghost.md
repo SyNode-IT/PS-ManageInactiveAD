@@ -121,10 +121,23 @@ Install-WindowsFeature -Name RSAT-AD-PowerShell
 
 ### Installation
 
+Pas besoin de Git sur le serveur. Téléchargez le ZIP directement depuis PowerShell :
+
 ```powershell
-git clone https://github.com/SyNode-IT/PS-ManageInactiveAD.git
-cd PS-ManageInactiveAD
+# Télécharger et extraire
+Invoke-WebRequest -Uri "https://github.com/SyNode-IT/PS-ManageInactiveAD/archive/refs/heads/main.zip" -OutFile "$env:TEMP\PS-ManageInactiveAD.zip"
+Expand-Archive -Path "$env:TEMP\PS-ManageInactiveAD.zip" -DestinationPath "C:\Scripts" -Force
+Rename-Item "C:\Scripts\PS-ManageInactiveAD-main" "C:\Scripts\PS-ManageInactiveAD"
+
+# Lancer un premier rapport
+cd C:\Scripts\PS-ManageInactiveAD
 .\Find-ADInactiveUsers.ps1
+```
+
+Si Git est installé sur le serveur, vous pouvez aussi cloner le dépôt :
+
+```powershell
+git clone https://github.com/SyNode-IT/PS-ManageInactiveAD.git C:\Scripts\PS-ManageInactiveAD
 ```
 
 C'est tout. Pas de module à installer, pas de dépendance complexe. Le seul fichier obligatoire est `ADManagement-Common.ps1` qui doit rester dans le même répertoire que les scripts.

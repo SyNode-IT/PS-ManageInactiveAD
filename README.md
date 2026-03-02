@@ -51,6 +51,24 @@ Install-WindowsFeature -Name RSAT-AD-PowerShell
 Install-WindowsFeature -Name GPMC
 ```
 
+## Installation
+
+**Option 1 — Téléchargement direct (recommandé) :**
+
+Télécharger le ZIP depuis GitHub : [Download ZIP](https://github.com/SyNode-IT/PS-ManageInactiveAD/archive/refs/heads/main.zip), puis extraire dans `C:\Scripts\PS-ManageInactiveAD\`.
+
+Ou via PowerShell :
+```powershell
+Invoke-WebRequest -Uri "https://github.com/SyNode-IT/PS-ManageInactiveAD/archive/refs/heads/main.zip" -OutFile "$env:TEMP\PS-ManageInactiveAD.zip"
+Expand-Archive -Path "$env:TEMP\PS-ManageInactiveAD.zip" -DestinationPath "C:\Scripts" -Force
+Rename-Item "C:\Scripts\PS-ManageInactiveAD-main" "C:\Scripts\PS-ManageInactiveAD"
+```
+
+**Option 2 — Avec Git (si installé) :**
+```powershell
+git clone https://github.com/SyNode-IT/PS-ManageInactiveAD.git C:\Scripts\PS-ManageInactiveAD
+```
+
 ## Utilisation rapide
 
 ```powershell
