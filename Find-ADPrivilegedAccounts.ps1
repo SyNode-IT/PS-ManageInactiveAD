@@ -12,8 +12,9 @@
   This script is read-only and does not modify any objects.
 
 .PARAMETER Groups
-  Optional. Array of group names to audit. Defaults to a comprehensive list of
-  built-in privileged groups.
+  Optional. Array of group names to audit. If not specified, auto-detects
+  built-in privileged groups by their well-known SID (works on both
+  English and French AD installations).
 
 .PARAMETER IncludeNested
   Optional switch. Recursively resolves nested group memberships. Default: $false.
@@ -53,18 +54,7 @@
 
 [CmdletBinding()]
 Param (
-  [string[]]$Groups = @(
-    'Domain Admins',
-    'Enterprise Admins',
-    'Schema Admins',
-    'Administrators',
-    'Account Operators',
-    'Backup Operators',
-    'Server Operators',
-    'Print Operators',
-    'DnsAdmins',
-    'Group Policy Creator Owners'
-  ),
+  [string[]]$Groups = @(),
 
   [switch]$IncludeNested,
 
@@ -87,6 +77,37 @@ if (-not (Test-Path $CommonPath)) {
 . $CommonPath
 
 Import-Module ActiveDirectory
+
+# Resolve default privileged groups by well-known SID (language-independent)
+if ($Groups.Count -eq 0) {
+  $DomainSID = (Get-ADDomain).DomainSID.Value
+  $RootDomainSID = try { (Get-ADDomain -Identity (Get-ADForest).RootDomain).DomainSID.Value } catch { $DomainSID }
+
+  $WellKnownSIDs = @(
+    "$DomainSID-512"      # Domain Admins / Admins du domaine
+    "$RootDomainSID-519"  # Enterprise Admins / Administrateurs de l'entreprise
+    "$RootDomainSID-518"  # Schema Admins / Administrateurs du schema
+    'S-1-5-32-544'        # Administrators / Administrateurs
+    'S-1-5-32-548'        # Account Operators / Operateurs de compte
+    'S-1-5-32-551'        # Backup Operators / Operateurs de sauvegarde
+    'S-1-5-32-549'        # Server Operators / Operateurs de serveur
+    'S-1-5-32-550'        # Print Operators / Operateurs d'impression
+    "$DomainSID-520"      # Group Policy Creator Owners / Proprietaires createurs de la strategie de groupe
+  )
+
+  $Groups = @()
+  foreach ($SID in $WellKnownSIDs) {
+    try {
+      $ResolvedGroup = Get-ADGroup -Identity $SID -ErrorAction SilentlyContinue
+      if ($ResolvedGroup) { $Groups += $ResolvedGroup.Name }
+    }
+    catch {}
+  }
+
+  # DnsAdmins has no well-known SID - try by name
+  $DnsAdminsGroup = Get-ADGroup -Filter { Name -eq 'DnsAdmins' } -ErrorAction SilentlyContinue
+  if ($DnsAdminsGroup) { $Groups += 'DnsAdmins' }
+}
 
 $ScriptName = 'Find-ADPrivilegedAccounts'
 $Paths = Resolve-ADMReportPath -ReportFilePath $ReportFilePath -ScriptName $ScriptName -CallerPSScriptRoot $PSScriptRoot
@@ -164,8 +185,8 @@ else {
   Export-ADMReport -Data $Results -Path $ReportFilePath -ReportName 'Privileged accounts audit'
 
   # Summary statistics
-  $UniqueUsers = ($Results | Where-Object { $_.ObjectClass -eq 'user' } | Select-Object -Unique SamAccountName).Count
-  $UniqueGroups = ($Results | Select-Object -Unique GroupName).Count
+  $UniqueUsers = @($Results | Where-Object { $_.ObjectClass -eq 'user' } | Select-Object -Unique SamAccountName).Count
+  $UniqueGroups = @($Results | Select-Object -Unique GroupName).Count
   Write-ADMLog "Summary: $UniqueUsers unique user(s) across $UniqueGroups group(s)."
 
   Export-ADMHTMLReport -Data $Results -Path $HtmlReportPath `
