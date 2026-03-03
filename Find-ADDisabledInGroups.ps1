@@ -120,7 +120,7 @@ Function Get-DisabledUsersInGroups {
 
           $AllEntries += [PSCustomObject]@{
             Username          = $User.SamAccountName
-            UserName          = $User.Name
+            DisplayName       = $User.Name
             GroupName         = $GroupName
             GroupDN           = $GroupDN
             LastLogonDate     = $User.LastLogonDate

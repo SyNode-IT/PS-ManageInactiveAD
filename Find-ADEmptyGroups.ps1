@@ -10,7 +10,7 @@
 
   Supports -WhatIf and -Confirm for deletion operations.
 
-.PARAMETER SearchScope
+.PARAMETER SearchBase
   Optional. LDAP path to restrict the search. Example: "OU=GROUPS,DC=corp,DC=local"
 
 .PARAMETER ExcludeOU
@@ -44,7 +44,7 @@
   Report only. Output to Rapports\Find-ADEmptyGroups.csv.
 
 .EXAMPLE
-  .\Find-ADEmptyGroups.ps1 -SearchScope "OU=GROUPS,DC=corp,DC=local" -DeleteObjects -WhatIf
+  .\Find-ADEmptyGroups.ps1 -SearchBase "OU=GROUPS,DC=corp,DC=local" -DeleteObjects -WhatIf
   Simulate deleting empty groups in the GROUPS OU.
 
 .EXAMPLE
@@ -56,7 +56,7 @@
 
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
 Param (
-  [string]$SearchScope,
+  [string]$SearchBase,
 
   [string[]]$ExcludeOU,
 
@@ -96,8 +96,8 @@ Function Get-EmptyGroups {
   [CmdletBinding()]
   Param ()
 
-  if ($SearchScope) {
-    Write-ADMLog "Finding empty groups under [$SearchScope]..."
+  if ($SearchBase) {
+    Write-ADMLog "Finding empty groups under [$SearchBase]..."
   }
   else {
     Write-ADMLog "Finding empty groups in the entire domain..."
@@ -110,8 +110,8 @@ Function Get-EmptyGroups {
       Properties = @('Members')
     }
 
-    if ($SearchScope) {
-      $GetParams['SearchBase'] = $SearchScope
+    if ($SearchBase) {
+      $GetParams['SearchBase'] = $SearchBase
     }
 
     $Groups = Get-ADGroup @GetParams

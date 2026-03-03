@@ -61,6 +61,7 @@ function Write-ADMLog {
   #>
   param(
     [Parameter(Mandatory = $true)]
+    [AllowEmptyString()]
     [string]$Message,
 
     [ValidateSet('Info', 'Warning', 'Error')]

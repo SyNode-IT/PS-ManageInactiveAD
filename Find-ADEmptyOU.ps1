@@ -11,7 +11,7 @@
   Supports -WhatIf and -Confirm for deletion operations.
   Note: OUs with 'Protect from Accidental Deletion' will fail to delete.
 
-.PARAMETER SearchScope
+.PARAMETER SearchBase
   Optional. LDAP path to restrict the search. Example: "OU=MGT,DC=corp,DC=local"
 
 .PARAMETER ExcludeOU
@@ -45,7 +45,7 @@
   Report only. Output to Rapports\Find-ADEmptyOU.csv.
 
 .EXAMPLE
-  .\Find-ADEmptyOU.ps1 -SearchScope "OU=MGT,DC=corp,DC=local" -DeleteObjects
+  .\Find-ADEmptyOU.ps1 -SearchBase "OU=MGT,DC=corp,DC=local" -DeleteObjects
   Delete all empty OUs found within the MGT OU.
 
 .EXAMPLE
@@ -57,7 +57,7 @@
 
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
 Param (
-  [string]$SearchScope,
+  [string]$SearchBase,
 
   [string[]]$ExcludeOU,
 
@@ -97,8 +97,8 @@ Function Get-EmptyOUs {
   [CmdletBinding()]
   Param ()
 
-  if ($SearchScope) {
-    Write-ADMLog "Finding empty OUs under [$SearchScope]..."
+  if ($SearchBase) {
+    Write-ADMLog "Finding empty OUs under [$SearchBase]..."
   }
   else {
     Write-ADMLog "Finding empty OUs in the entire domain..."
@@ -108,8 +108,8 @@ Function Get-EmptyOUs {
   Try {
     $GetParams = @{ Filter = '*' }
 
-    if ($SearchScope) {
-      $GetParams['SearchBase'] = $SearchScope
+    if ($SearchBase) {
+      $GetParams['SearchBase'] = $SearchBase
     }
 
     $AllOUs = Get-ADOrganizationalUnit @GetParams

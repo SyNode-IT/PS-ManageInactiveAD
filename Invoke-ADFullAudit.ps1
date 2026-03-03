@@ -181,7 +181,17 @@ ForEach ($Script in $Scripts) {
       $RunParams[$Key] = $Script.ExtraParams[$Key]
     }
 
-    & $ScriptPath @RunParams
+    # Filter params to only those accepted by the target script
+    $ScriptCmd = Get-Command $ScriptPath
+    $AcceptedParams = $ScriptCmd.Parameters.Keys
+    $FilteredParams = @{}
+    foreach ($Key in $RunParams.Keys) {
+      if ($AcceptedParams -contains $Key) {
+        $FilteredParams[$Key] = $RunParams[$Key]
+      }
+    }
+
+    & $ScriptPath @FilteredParams
 
     # Count results from CSV
     $CsvPath = Join-Path $ReportsDir "$ScriptBaseName.csv"
