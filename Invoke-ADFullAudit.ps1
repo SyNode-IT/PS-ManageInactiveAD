@@ -1,4 +1,4 @@
-#requires -version 5.1
+﻿#requires -version 5.1
 #requires -Modules ActiveDirectory
 <#
 .SYNOPSIS
@@ -106,16 +106,16 @@ $Scripts = @(
   @{ File = 'Find-ADInactiveComputers.ps1';    Desc = 'Ordinateurs inactifs';             Category = 'Nettoyage';  ExtraParams = @{ DaysInactive = $DaysInactive } }
   @{ File = 'Find-ADEmptyGroups.ps1';          Desc = 'Groupes vides';                    Category = 'Nettoyage';  ExtraParams = @{} }
   @{ File = 'Find-ADEmptyOU.ps1';              Desc = 'OUs vides';                        Category = 'Nettoyage';  ExtraParams = @{} }
-  @{ File = 'Find-ADLockedAccounts.ps1';       Desc = 'Comptes verrouillés';              Category = 'Sécurité';   ExtraParams = @{} }
-  @{ File = 'Find-ADPasswordNeverExpires.ps1'; Desc = 'Mots de passe non-expirants';      Category = 'Sécurité';   ExtraParams = @{} }
-  @{ File = 'Find-ADStalePasswords.ps1';       Desc = 'Mots de passe anciens';            Category = 'Sécurité';   ExtraParams = @{} }
-  @{ File = 'Find-ADPrivilegedAccounts.ps1';   Desc = 'Comptes privilégiés';              Category = 'Sécurité';   ExtraParams = @{} }
-  @{ File = 'Find-ADDisabledInGroups.ps1';     Desc = 'Désactivés dans des groupes';      Category = 'Maintenance'; ExtraParams = @{} }
-  @{ File = 'Find-ADObsoleteOS.ps1';           Desc = 'OS obsolètes';                     Category = 'Maintenance'; ExtraParams = @{} }
+  @{ File = 'Find-ADLockedAccounts.ps1';       Desc = 'Comptes verrouilles';              Category = 'Securite';   ExtraParams = @{} }
+  @{ File = 'Find-ADPasswordNeverExpires.ps1'; Desc = 'Mots de passe non-expirants';      Category = 'Securite';   ExtraParams = @{} }
+  @{ File = 'Find-ADStalePasswords.ps1';       Desc = 'Mots de passe anciens';            Category = 'Securite';   ExtraParams = @{} }
+  @{ File = 'Find-ADPrivilegedAccounts.ps1';   Desc = 'Comptes privilegies';              Category = 'Securite';   ExtraParams = @{} }
+  @{ File = 'Find-ADDisabledInGroups.ps1';     Desc = 'Desactives dans des groupes';      Category = 'Maintenance'; ExtraParams = @{} }
+  @{ File = 'Find-ADObsoleteOS.ps1';           Desc = 'OS obsoletes';                     Category = 'Maintenance'; ExtraParams = @{} }
   @{ File = 'Find-ADUnlinkedGPO.ps1';          Desc = 'GPOs orphelines';                  Category = 'Maintenance'; ExtraParams = @{} }
-  @{ File = 'Find-ADDuplicateSPN.ps1';         Desc = 'SPNs dupliqués';                   Category = 'Maintenance'; ExtraParams = @{} }
-  @{ File = 'Test-ADReplicationHealth.ps1';    Desc = 'Santé de la réplication';           Category = 'Santé AD';   ExtraParams = @{} }
-  @{ File = 'Test-ADFSMORoles.ps1';            Desc = 'Rôles FSMO';                       Category = 'Santé AD';   ExtraParams = @{} }
+  @{ File = 'Find-ADDuplicateSPN.ps1';         Desc = 'SPNs dupliques';                   Category = 'Maintenance'; ExtraParams = @{} }
+  @{ File = 'Test-ADReplicationHealth.ps1';    Desc = 'Sante de la replication';           Category = 'Sante AD';   ExtraParams = @{} }
+  @{ File = 'Test-ADFSMORoles.ps1';            Desc = 'Roles FSMO';                       Category = 'Sante AD';   ExtraParams = @{} }
 )
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
@@ -125,7 +125,7 @@ Write-ADMBanner -ScriptName $ScriptName
 if ($EnableLogging) { Start-ADMLogging -ScriptName $ScriptName }
 
 Write-ADMLog "=== AUDIT COMPLET ACTIVE DIRECTORY ==="
-Write-ADMLog "Paramètres : DaysInactive=$DaysInactive | SearchBase=$SearchBase | SkipGPO=$SkipGPO"
+Write-ADMLog "Parametres : DaysInactive=$DaysInactive | SearchBase=$SearchBase | SkipGPO=$SkipGPO"
 Write-ADMLog ""
 
 # Build common params
@@ -146,13 +146,13 @@ ForEach ($Script in $Scripts) {
 
   # Skip GPO script if requested
   if ($SkipGPO -and $Script.File -eq 'Find-ADUnlinkedGPO.ps1') {
-    Write-ADMLog "  [SKIP] $ScriptBaseName (module GroupPolicy non requis)"
+    Write-ADMLog "  [SKIP] $ScriptBaseName (module GroupPolicy non requis / SkipGPO)"
     $AuditResults += [PSCustomObject]@{
       Script      = $ScriptBaseName
       Description = $Script.Desc
-      Catégorie   = $Script.Category
-      Résultats   = '-'
-      Statut      = 'IGNORÉ'
+      Categorie   = $Script.Category
+      Resultats   = '-'
+      Statut      = 'IGNORE'
       Rapport     = ''
     }
     continue
@@ -164,8 +164,8 @@ ForEach ($Script in $Scripts) {
     $AuditResults += [PSCustomObject]@{
       Script      = $ScriptBaseName
       Description = $Script.Desc
-      Catégorie   = $Script.Category
-      Résultats   = '-'
+      Categorie   = $Script.Category
+      Resultats   = '-'
       Statut      = 'ABSENT'
       Rapport     = ''
     }
@@ -199,13 +199,13 @@ ForEach ($Script in $Scripts) {
     $AuditResults += [PSCustomObject]@{
       Script      = $ScriptBaseName
       Description = $Script.Desc
-      Catégorie   = $Script.Category
-      Résultats   = $Count
+      Categorie   = $Script.Category
+      Resultats   = $Count
       Statut      = 'OK'
       Rapport     = if (Test-Path $HtmlPath) { $HtmlPath } else { '' }
     }
 
-    Write-ADMLog "  [OK]   $ScriptBaseName : $Count élément(s)"
+    Write-ADMLog "  [OK]   $ScriptBaseName : $Count element(s)"
   }
   catch {
     $ScriptsError++
@@ -214,8 +214,8 @@ ForEach ($Script in $Scripts) {
     $AuditResults += [PSCustomObject]@{
       Script      = $ScriptBaseName
       Description = $Script.Desc
-      Catégorie   = $Script.Category
-      Résultats   = '-'
+      Categorie   = $Script.Category
+      Resultats   = '-'
       Statut      = 'ERREUR'
       Rapport     = ''
     }
@@ -224,9 +224,9 @@ ForEach ($Script in $Scripts) {
 
 $Duration = (Get-Date) - $StartTime
 Write-ADMLog ""
-Write-ADMLog "=== RÉSUMÉ ==="
-Write-ADMLog "Durée totale : $([math]::Round($Duration.TotalSeconds, 1))s"
-Write-ADMLog "Scripts OK : $ScriptsOK | Erreurs : $ScriptsError | Éléments trouvés : $TotalFindings"
+Write-ADMLog "=== RESUME ==="
+Write-ADMLog "Duree totale : $([math]::Round($Duration.TotalSeconds, 1))s"
+Write-ADMLog "Scripts OK : $ScriptsOK | Erreurs : $ScriptsError | Elements trouves : $TotalFindings"
 
 #-----------------------------------------------------------[Dashboard HTML]------------------------------------------------------
 
@@ -239,7 +239,7 @@ $RowsHtml = foreach ($R in $AuditResults) {
     'OK'      { 'status-success' }
     'ERREUR'  { 'status-danger' }
     'ABSENT'  { 'status-danger' }
-    'IGNORÉ'  { 'status-muted' }
+    'IGNORE'  { 'status-muted' }
     default   { '' }
   }
 
@@ -249,16 +249,16 @@ $RowsHtml = foreach ($R in $AuditResults) {
     $ReportLink = "<a href=`"$FileName`">Voir le rapport</a>"
   }
 
-  $ResultsDisplay = $R.Résultats
-  if ($R.Résultats -ne '-' -and [int]$R.Résultats -gt 0) {
-    $ResultsDisplay = "<strong>$($R.Résultats)</strong>"
+  $ResultsDisplay = $R.Resultats
+  if ($R.Resultats -ne '-' -and [int]$R.Resultats -gt 0) {
+    $ResultsDisplay = "<strong>$($R.Resultats)</strong>"
   }
 
   @"
         <tr>
           <td><strong>$($R.Script)</strong></td>
           <td>$($R.Description)</td>
-          <td>$($R.Catégorie)</td>
+          <td>$($R.Categorie)</td>
           <td style="text-align:center">$ResultsDisplay</td>
           <td class="$StatusClass" style="text-align:center">$($R.Statut)</td>
           <td style="text-align:center">$ReportLink</td>
@@ -394,11 +394,11 @@ $($RowsHtml -join "`n")
 "@
 
 $DashboardHtml | Out-File -FilePath $DashboardPath -Encoding UTF8
-Write-ADMLog "Tableau de bord sauvegardé : $DashboardPath"
+Write-ADMLog "Tableau de bord : $DashboardPath"
 
 # Send email with dashboard
 Send-ADMReport -EmailTo $EmailTo -EmailFrom $EmailFrom -SmtpServer $SmtpServer `
-  -Subject "[$ScriptName] Audit complet - $TotalFindings éléments trouvés ($ScriptsOK OK / $ScriptsError erreurs)" `
+  -Subject "[$ScriptName] Audit complet - $TotalFindings elements trouves ($ScriptsOK OK / $ScriptsError erreurs)" `
   -Attachments $DashboardPath
 
 if ($EnableLogging) { Stop-ADMLogging }
