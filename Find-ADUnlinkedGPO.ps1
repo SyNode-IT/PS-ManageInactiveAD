@@ -16,7 +16,7 @@
   Optional. Array of GPO display names to exclude from the results (e.g. default GPOs).
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\UnlinkedGPO.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADUnlinkedGPO.csv (+ .html).
 
 .PARAMETER DeleteObjects
   Optional switch. Deletes unlinked GPOs. Supports -WhatIf.
@@ -34,7 +34,7 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        1.0
+  Version:        2.1
   Creation Date:  2026
   Compatible:     Windows Server 2022, Windows Server 2025
   Requires:       GroupPolicy module (GPMC / RSAT)

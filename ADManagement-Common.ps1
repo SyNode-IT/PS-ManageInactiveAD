@@ -358,7 +358,9 @@ $SummaryHtml
 $TableHtml
 
   <div class="footer">
-    PS-ManageInactiveAD v2.1 &mdash; <a href="https://github.com/SyNode-IT/PS-ManageInactiveAD">GitHub</a>
+    PS-ManageInactiveAD v2.1 &mdash;
+    <a href="../Documentation.html">Documentation</a> |
+    <a href="https://github.com/SyNode-IT/PS-ManageInactiveAD">GitHub</a>
   </div>
 
 </body>

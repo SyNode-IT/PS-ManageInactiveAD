@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>PS-ManageInactiveAD - Documentation Technique v2.0</title>
+<title>PS-ManageInactiveAD - Documentation Technique v2.1</title>
 <style>
   @page { margin: 1.5cm; size: A4; }
   * { box-sizing: border-box; }
@@ -49,7 +49,7 @@
 
 <h1>PS-ManageInactiveAD</h1>
 <p class="header-meta">
-  <strong>Documentation Technique</strong> &mdash; Version 2.0<br>
+  <strong>Documentation Technique</strong> &mdash; Version 2.1<br>
   Compatibilit&eacute; : Windows Server 2022, Windows Server 2025 (PowerShell 5.1+)<br>
   Derni&egrave;re mise &agrave; jour : 2026
 </p>
@@ -61,39 +61,40 @@
   <li><a href="#installation">2. Installation</a></li>
   <li><a href="#architecture">3. Architecture</a></li>
   <li><a href="#params">4. Param&egrave;tres communs</a></li>
-  <li><a href="#nettoyage">5. Scripts de nettoyage AD</a>
+  <li><a href="#fullaudit">5. Audit complet (Invoke-ADFullAudit)</a></li>
+  <li><a href="#nettoyage">6. Scripts de nettoyage AD</a>
     <ul>
-      <li><a href="#users">5.1 Find-ADInactiveUsers</a></li>
-      <li><a href="#computers">5.2 Find-ADInactiveComputers</a></li>
-      <li><a href="#groups">5.3 Find-ADEmptyGroups</a></li>
-      <li><a href="#ou">5.4 Find-ADEmptyOU</a></li>
+      <li><a href="#users">6.1 Find-ADInactiveUsers</a></li>
+      <li><a href="#computers">6.2 Find-ADInactiveComputers</a></li>
+      <li><a href="#groups">6.3 Find-ADEmptyGroups</a></li>
+      <li><a href="#ou">6.4 Find-ADEmptyOU</a></li>
     </ul>
   </li>
-  <li><a href="#securite">6. Scripts d'audit s&eacute;curit&eacute;</a>
+  <li><a href="#securite">7. Scripts d'audit s&eacute;curit&eacute;</a>
     <ul>
-      <li><a href="#locked">6.1 Find-ADLockedAccounts</a></li>
-      <li><a href="#pwdneverexpires">6.2 Find-ADPasswordNeverExpires</a></li>
-      <li><a href="#stalepwd">6.3 Find-ADStalePasswords</a></li>
-      <li><a href="#privileged">6.4 Find-ADPrivilegedAccounts</a></li>
+      <li><a href="#locked">7.1 Find-ADLockedAccounts</a></li>
+      <li><a href="#pwdneverexpires">7.2 Find-ADPasswordNeverExpires</a></li>
+      <li><a href="#stalepwd">7.3 Find-ADStalePasswords</a></li>
+      <li><a href="#privileged">7.4 Find-ADPrivilegedAccounts</a></li>
     </ul>
   </li>
-  <li><a href="#maintenance">7. Scripts de maintenance</a>
+  <li><a href="#maintenance">8. Scripts de maintenance</a>
     <ul>
-      <li><a href="#disabledingroups">7.1 Find-ADDisabledInGroups</a></li>
-      <li><a href="#obsoleteos">7.2 Find-ADObsoleteOS</a></li>
-      <li><a href="#gpo">7.3 Find-ADUnlinkedGPO</a></li>
-      <li><a href="#spn">7.4 Find-ADDuplicateSPN</a></li>
+      <li><a href="#disabledingroups">8.1 Find-ADDisabledInGroups</a></li>
+      <li><a href="#obsoleteos">8.2 Find-ADObsoleteOS</a></li>
+      <li><a href="#gpo">8.3 Find-ADUnlinkedGPO</a></li>
+      <li><a href="#spn">8.4 Find-ADDuplicateSPN</a></li>
     </ul>
   </li>
-  <li><a href="#sante">8. Scripts de sant&eacute; AD</a>
+  <li><a href="#sante">9. Scripts de sant&eacute; AD</a>
     <ul>
-      <li><a href="#replication">8.1 Test-ADReplicationHealth</a></li>
-      <li><a href="#fsmo">8.2 Test-ADFSMORoles</a></li>
+      <li><a href="#replication">9.1 Test-ADReplicationHealth</a></li>
+      <li><a href="#fsmo">9.2 Test-ADFSMORoles</a></li>
     </ul>
   </li>
-  <li><a href="#workflow">9. Workflow de nettoyage recommand&eacute;</a></li>
-  <li><a href="#planification">10. Planification des t&acirc;ches</a></li>
-  <li><a href="#depannage">11. D&eacute;pannage</a></li>
+  <li><a href="#workflow">10. Workflow de nettoyage recommand&eacute;</a></li>
+  <li><a href="#planification">11. Planification des t&acirc;ches</a></li>
+  <li><a href="#depannage">12. D&eacute;pannage</a></li>
 </ul>
 </div>
 
@@ -138,6 +139,7 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 
 <pre><code>PS-ManageInactiveAD/
   ADManagement-Common.ps1          &larr; Fichier obligatoire (fonctions partag&eacute;es)
+  Invoke-ADFullAudit.ps1           &larr; Audit complet (tableau de bord)
   Find-ADInactiveUsers.ps1
   Find-ADInactiveComputers.ps1
   Find-ADEmptyGroups.ps1
@@ -151,7 +153,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
   Find-ADUnlinkedGPO.ps1
   Find-ADDuplicateSPN.ps1
   Test-ADReplicationHealth.ps1
-  Test-ADFSMORoles.ps1</code></pre>
+  Test-ADFSMORoles.ps1
+  Documentation.html               &larr; Cette documentation</code></pre>
 
 <ol start="3">
   <li>V&eacute;rifier la politique d'ex&eacute;cution PowerShell :</li>
@@ -171,6 +174,9 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
   <tr><td><code>Write-ADMLog</code></td><td>&Eacute;criture horodat&eacute;e console + fichier de log</td></tr>
   <tr><td><code>Start-ADMLogging</code> / <code>Stop-ADMLogging</code></td><td>D&eacute;marrage/arr&ecirc;t du logging fichier</td></tr>
   <tr><td><code>Export-ADMReport</code></td><td>Export CSV avec cr&eacute;ation auto du r&eacute;pertoire</td></tr>
+  <tr><td><code>Export-ADMHTMLReport</code></td><td>G&eacute;n&eacute;ration du rapport HTML styl&eacute; (cartes, couleurs, table responsive)</td></tr>
+  <tr><td><code>Resolve-ADMReportPath</code></td><td>R&eacute;solution automatique des chemins CSV + HTML</td></tr>
+  <tr><td><code>Open-ADMReport</code></td><td>Ouverture du rapport HTML dans le navigateur par d&eacute;faut</td></tr>
   <tr><td><code>Send-ADMReport</code></td><td>Envoi du rapport par email SMTP</td></tr>
   <tr><td><code>Test-ADMExcludedOU</code></td><td>V&eacute;rification d'exclusion d'OU</td></tr>
   <tr><td><code>Move-ADMToQuarantine</code></td><td>D&eacute;placement vers OU de quarantaine</td></tr>
@@ -180,23 +186,26 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 <h3>R&eacute;pertoires par d&eacute;faut</h3>
 <table>
   <tr><th>Chemin</th><th>Contenu</th></tr>
-  <tr><td><code>C:\tmp\</code></td><td>Rapports CSV</td></tr>
-  <tr><td><code>C:\tmp\Logs\</code></td><td>Fichiers de log (si <code>-EnableLogging</code>)</td></tr>
+  <tr><td><code>Rapports\</code></td><td>Rapports CSV et HTML</td></tr>
+  <tr><td><code>Rapports\Logs\</code></td><td>Fichiers de log (si <code>-EnableLogging</code>)</td></tr>
 </table>
+
+<div class="info">Les rapports sont stock&eacute;s dans le sous-dossier <code>Rapports\</code> du r&eacute;pertoire des scripts. Chaque script g&eacute;n&egrave;re automatiquement un CSV et un rapport HTML styl&eacute;. Le rapport HTML s'ouvre dans le navigateur &agrave; la fin de l'ex&eacute;cution.</div>
 
 <!-- ========================================== -->
 <h2 id="params">4. Param&egrave;tres communs</h2>
 
-<h3>Rapport</h3>
+<h3>Rapports</h3>
 <table>
   <tr><th>Param&egrave;tre</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
-  <tr><td><code>-ReportFilePath</code></td><td>String</td><td><code>C:\tmp\&lt;Script&gt;.csv</code></td><td>Chemin complet du fichier CSV</td></tr>
+  <tr><td><code>-ReportFilePath</code></td><td>String</td><td><code>Rapports\&lt;Script&gt;.csv</code></td><td>Chemin du rapport CSV (le HTML est g&eacute;n&eacute;r&eacute; automatiquement)</td></tr>
+  <tr><td><code>-NoOpen</code></td><td>Switch</td><td><code>$false</code></td><td>D&eacute;sactive l'ouverture auto du rapport HTML (pour t&acirc;ches planifi&eacute;es)</td></tr>
 </table>
 
 <h3>Logging</h3>
 <table>
   <tr><th>Param&egrave;tre</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
-  <tr><td><code>-EnableLogging</code></td><td>Switch</td><td><code>$false</code></td><td>Active l'&eacute;criture de logs dans <code>C:\tmp\Logs\</code></td></tr>
+  <tr><td><code>-EnableLogging</code></td><td>Switch</td><td><code>$false</code></td><td>Active l'&eacute;criture de logs dans <code>Rapports\Logs\</code></td></tr>
 </table>
 
 <h3>Email</h3>
@@ -224,9 +233,45 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 .\Find-ADInactiveUsers.ps1 -DisableUsers -Confirm</code></pre>
 
 <!-- ========================================== -->
-<h2 id="nettoyage">5. Scripts de nettoyage AD</h2>
+<h2 id="fullaudit">5. Audit complet (Invoke-ADFullAudit)</h2>
 
-<h3 id="users">5.1 Find-ADInactiveUsers</h3>
+<p><strong>But :</strong> Ex&eacute;cuter les 14 scripts d'audit en une seule commande et g&eacute;n&eacute;rer un tableau de bord HTML r&eacute;capitulatif.</p>
+
+<p>Le tableau de bord affiche :</p>
+<ul>
+  <li>Cartes r&eacute;sum&eacute; : nombre de scripts ex&eacute;cut&eacute;s, &eacute;l&eacute;ments trouv&eacute;s, succ&egrave;s, erreurs</li>
+  <li>Tableau d&eacute;taill&eacute; avec lien vers chaque rapport HTML individuel</li>
+</ul>
+
+<table>
+  <tr><th>Param&egrave;tre</th><th>D&eacute;faut</th><th>Description</th></tr>
+  <tr><td><code>-DaysInactive</code></td><td><code>90</code></td><td>Seuil d'inactivit&eacute; (transmis aux scripts utilisateurs/ordinateurs)</td></tr>
+  <tr><td><code>-SearchBase</code></td><td>&mdash;</td><td>Restreindre la recherche (transmis &agrave; tous les scripts)</td></tr>
+  <tr><td><code>-ExcludeOU</code></td><td>&mdash;</td><td>OUs &agrave; exclure (transmis &agrave; tous les scripts)</td></tr>
+  <tr><td><code>-SkipGPO</code></td><td><code>$false</code></td><td>Ignore Find-ADUnlinkedGPO (si module GroupPolicy absent)</td></tr>
+  <tr><td><code>-NoOpen</code></td><td><code>$false</code></td><td>D&eacute;sactive l'ouverture auto du tableau de bord</td></tr>
+  <tr><td><code>-EnableLogging</code></td><td><code>$false</code></td><td>Active le logging pour tous les scripts</td></tr>
+  <tr><td><code>-EmailTo</code> / <code>-SmtpServer</code></td><td>&mdash;</td><td>Envoie le tableau de bord par email</td></tr>
+</table>
+
+<pre><code># Audit complet (ouvre le tableau de bord automatiquement)
+.\Invoke-ADFullAudit.ps1
+
+# Audit cibl&eacute; sur une OU avec seuil de 60 jours
+.\Invoke-ADFullAudit.ps1 -DaysInactive 60 -SearchBase "OU=Paris,DC=corp,DC=local"
+
+# Mode silencieux avec logging et email (t&acirc;che planifi&eacute;e)
+.\Invoke-ADFullAudit.ps1 -NoOpen -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"
+
+# Sans le module GroupPolicy
+.\Invoke-ADFullAudit.ps1 -SkipGPO</code></pre>
+
+<p><strong>Sortie :</strong> <code>Rapports\FullAudit_yyyyMMdd_HHmmss.html</code></p>
+
+<!-- ========================================== -->
+<h2 id="nettoyage">6. Scripts de nettoyage AD</h2>
+
+<h3 id="users">6.1 Find-ADInactiveUsers</h3>
 <p><strong>But :</strong> Trouver et g&eacute;rer les comptes utilisateurs inactifs.</p>
 
 <table>
@@ -253,8 +298,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 
 <p><strong>Colonnes CSV :</strong> <code>Username</code>, <code>Name</code>, <code>LastLogonDate</code>, <code>DistinguishedName</code></p>
 
-<!-- 5.2 -->
-<h3 id="computers">5.2 Find-ADInactiveComputers</h3>
+<!-- 6.2 -->
+<h3 id="computers">6.2 Find-ADInactiveComputers</h3>
 <p><strong>But :</strong> Trouver et g&eacute;rer les objets ordinateur inactifs.</p>
 
 <table>
@@ -272,8 +317,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 # D&eacute;sactiver et d&eacute;placer en quarantaine
 .\Find-ADInactiveComputers.ps1 -DisableObjects -QuarantineOU "OU=Disabled Computers,DC=corp,DC=local"</code></pre>
 
-<!-- 5.3 -->
-<h3 id="groups">5.3 Find-ADEmptyGroups</h3>
+<!-- 6.3 -->
+<h3 id="groups">6.3 Find-ADEmptyGroups</h3>
 <p><strong>But :</strong> Trouver et g&eacute;rer les groupes AD vides.</p>
 
 <table>
@@ -288,8 +333,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 # Supprimer (simulation)
 .\Find-ADEmptyGroups.ps1 -DeleteObjects -WhatIf</code></pre>
 
-<!-- 5.4 -->
-<h3 id="ou">5.4 Find-ADEmptyOU</h3>
+<!-- 6.4 -->
+<h3 id="ou">6.4 Find-ADEmptyOU</h3>
 <p><strong>But :</strong> Trouver et g&eacute;rer les OUs vides.</p>
 
 <table>
@@ -301,9 +346,9 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 <div class="warning">Les OUs prot&eacute;g&eacute;es contre la suppression accidentelle g&eacute;n&egrave;reront une erreur.</div>
 
 <!-- ========================================== -->
-<h2 id="securite">6. Scripts d'audit s&eacute;curit&eacute;</h2>
+<h2 id="securite">7. Scripts d'audit s&eacute;curit&eacute;</h2>
 
-<h3 id="locked">6.1 Find-ADLockedAccounts</h3>
+<h3 id="locked">7.1 Find-ADLockedAccounts</h3>
 <p><strong>But :</strong> Trouver et optionnellement d&eacute;verrouiller les comptes verrouill&eacute;s.</p>
 
 <table>
@@ -319,8 +364,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 
 <p><strong>CSV :</strong> <code>Username</code>, <code>Name</code>, <code>LastLogonDate</code>, <code>LockoutTime</code>, <code>LastBadPasswordAttempt</code>, <code>DistinguishedName</code></p>
 
-<!-- 6.2 -->
-<h3 id="pwdneverexpires">6.2 Find-ADPasswordNeverExpires</h3>
+<!-- 7.2 -->
+<h3 id="pwdneverexpires">7.2 Find-ADPasswordNeverExpires</h3>
 <p><strong>But :</strong> Trouver les comptes avec le flag &laquo; Mot de passe n'expire jamais &raquo;.</p>
 
 <table>
@@ -336,8 +381,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 # Retirer le flag (simulation)
 .\Find-ADPasswordNeverExpires.ps1 -RemoveFlag -WhatIf</code></pre>
 
-<!-- 6.3 -->
-<h3 id="stalepwd">6.3 Find-ADStalePasswords</h3>
+<!-- 7.3 -->
+<h3 id="stalepwd">7.3 Find-ADStalePasswords</h3>
 <p><strong>But :</strong> Trouver les comptes dont le mot de passe est ancien.</p>
 
 <table>
@@ -354,8 +399,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 
 <p><strong>CSV :</strong> <code>Username</code>, <code>Name</code>, <code>PasswordLastSet</code>, <code>PasswordAgeDays</code>, <code>LastLogonDate</code>, <code>Description</code>, <code>DistinguishedName</code></p>
 
-<!-- 6.4 -->
-<h3 id="privileged">6.4 Find-ADPrivilegedAccounts</h3>
+<!-- 7.4 -->
+<h3 id="privileged">7.4 Find-ADPrivilegedAccounts</h3>
 <p><strong>But :</strong> Auditer les membres des groupes privil&eacute;gi&eacute;s.</p>
 
 <table>
@@ -373,9 +418,9 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 .\Find-ADPrivilegedAccounts.ps1 -Groups "Domain Admins","IT-Admins"</code></pre>
 
 <!-- ========================================== -->
-<h2 id="maintenance">7. Scripts de maintenance</h2>
+<h2 id="maintenance">8. Scripts de maintenance</h2>
 
-<h3 id="disabledingroups">7.1 Find-ADDisabledInGroups</h3>
+<h3 id="disabledingroups">8.1 Find-ADDisabledInGroups</h3>
 <p><strong>But :</strong> Trouver les comptes d&eacute;sactiv&eacute;s encore membres de groupes.</p>
 
 <table>
@@ -389,8 +434,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 # Retirer les appartenances (simulation)
 .\Find-ADDisabledInGroups.ps1 -RemoveMemberships -WhatIf</code></pre>
 
-<!-- 7.2 -->
-<h3 id="obsoleteos">7.2 Find-ADObsoleteOS</h3>
+<!-- 8.2 -->
+<h3 id="obsoleteos">8.2 Find-ADObsoleteOS</h3>
 <p><strong>But :</strong> Trouver les ordinateurs sous OS obsol&egrave;tes.</p>
 
 <table>
@@ -406,8 +451,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 # Uniquement Server 2012 et 2016
 .\Find-ADObsoleteOS.ps1 -ObsoletePatterns "*Server 2012*","*Server 2016*"</code></pre>
 
-<!-- 7.3 -->
-<h3 id="gpo">7.3 Find-ADUnlinkedGPO</h3>
+<!-- 8.3 -->
+<h3 id="gpo">8.3 Find-ADUnlinkedGPO</h3>
 <p><strong>But :</strong> Trouver les GPO orphelines (non li&eacute;es).</p>
 
 <div class="warning"><strong>Pr&eacute;requis :</strong> Module <code>GroupPolicy</code> (GPMC / RSAT)</div>
@@ -424,17 +469,17 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 # Supprimer (simulation)
 .\Find-ADUnlinkedGPO.ps1 -DeleteObjects -WhatIf</code></pre>
 
-<!-- 7.4 -->
-<h3 id="spn">7.4 Find-ADDuplicateSPN</h3>
+<!-- 8.4 -->
+<h3 id="spn">8.4 Find-ADDuplicateSPN</h3>
 <p><strong>But :</strong> D&eacute;tecter les SPN en doublon (causent des &eacute;checs Kerberos).</p>
 
 <p>Ce script est <strong>en lecture seule</strong>. Correction manuelle avec :</p>
 <pre><code>setspn -d HTTP/serveur.corp.local COMPTE_A_CORRIGER</code></pre>
 
 <!-- ========================================== -->
-<h2 id="sante">8. Scripts de sant&eacute; AD</h2>
+<h2 id="sante">9. Scripts de sant&eacute; AD</h2>
 
-<h3 id="replication">8.1 Test-ADReplicationHealth</h3>
+<h3 id="replication">9.1 Test-ADReplicationHealth</h3>
 <p><strong>But :</strong> V&eacute;rifier la r&eacute;plication AD entre tous les DCs.</p>
 <p>Statuts possibles : <code>OK</code>, <code>ERROR</code>, <code>UNREACHABLE</code></p>
 
@@ -443,8 +488,8 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 
 <p><strong>CSV :</strong> <code>SourceDC</code>, <code>SourceSite</code>, <code>Partner</code>, <code>LastReplicationSuccess</code>, <code>MinutesSinceReplication</code>, <code>ConsecutiveFailures</code>, <code>Status</code></p>
 
-<!-- 8.2 -->
-<h3 id="fsmo">8.2 Test-ADFSMORoles</h3>
+<!-- 9.2 -->
+<h3 id="fsmo">9.2 Test-ADFSMORoles</h3>
 <p><strong>But :</strong> Auditer les 5 r&ocirc;les FSMO et l'&eacute;tat des DCs.</p>
 
 <p><strong>R&ocirc;les v&eacute;rifi&eacute;s :</strong></p>
@@ -459,11 +504,13 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 <pre><code>.\Test-ADFSMORoles.ps1 -EnableLogging</code></pre>
 
 <!-- ========================================== -->
-<h2 id="workflow">9. Workflow de nettoyage recommand&eacute;</h2>
+<h2 id="workflow">10. Workflow de nettoyage recommand&eacute;</h2>
 
 <h3>Workflow mensuel</h3>
 <div class="workflow-box">
 <strong>Semaine 1 : AUDIT</strong>
+  Option rapide : <code>.\Invoke-ADFullAudit.ps1</code>
+  Ou script par script :
   1. Find-ADPrivilegedAccounts       &rarr; V&eacute;rifier les comptes &agrave; privil&egrave;ges
   2. Find-ADPasswordNeverExpires     &rarr; Identifier les risques
   3. Find-ADStalePasswords           &rarr; Mots de passe anciens
@@ -506,47 +553,35 @@ Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
 </div>
 
 <!-- ========================================== -->
-<h2 id="planification">10. Planification des t&acirc;ches</h2>
+<h2 id="planification">11. Planification des t&acirc;ches</h2>
 
-<h3>T&acirc;che planifi&eacute;e hebdomadaire</h3>
+<h3>T&acirc;che planifi&eacute;e : audit complet hebdomadaire</h3>
 <pre><code>$Action = New-ScheduledTaskAction -Execute 'powershell.exe' `
-  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\Find-ADInactiveUsers.ps1" -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"'
+  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\PS-ManageInactiveAD\Invoke-ADFullAudit.ps1" -NoOpen -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"'
 
 $Trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At '06:00'
 
 $Settings = New-ScheduledTaskSettingsSet -RunOnlyIfNetworkAvailable -StartWhenAvailable
 
-Register-ScheduledTask -TaskName 'AD-InactiveUsersReport' `
+Register-ScheduledTask -TaskName 'AD-FullAudit-Weekly' `
   -Action $Action -Trigger $Trigger -Settings $Settings `
   -User 'DOMAIN\svc-admanagement' -Password 'MotDePasse' `
-  -Description 'Rapport hebdomadaire des utilisateurs inactifs'</code></pre>
+  -Description 'Audit complet hebdomadaire Active Directory'</code></pre>
 
-<h3>Script d'ex&eacute;cution group&eacute;e</h3>
-<pre><code># RunAllReports.ps1
-$ScriptPath = 'C:\Scripts\PS-ManageInactiveAD'
-$CommonParams = @{
-  EnableLogging = $true
-  EmailTo       = 'admin@corp.local'
-  SmtpServer    = 'smtp.corp.local'
-}
+<div class="info">Le switch <code>-NoOpen</code> est indispensable pour les t&acirc;ches planifi&eacute;es (pas de session interactive pour ouvrir un navigateur).</div>
 
-& "$ScriptPath\Find-ADInactiveUsers.ps1" @CommonParams
-& "$ScriptPath\Find-ADInactiveComputers.ps1" @CommonParams
-& "$ScriptPath\Find-ADEmptyGroups.ps1" @CommonParams
-& "$ScriptPath\Find-ADEmptyOU.ps1" @CommonParams
-& "$ScriptPath\Find-ADLockedAccounts.ps1" @CommonParams
-& "$ScriptPath\Find-ADPasswordNeverExpires.ps1" @CommonParams
-& "$ScriptPath\Find-ADStalePasswords.ps1" @CommonParams
-& "$ScriptPath\Find-ADPrivilegedAccounts.ps1" @CommonParams
-& "$ScriptPath\Find-ADDisabledInGroups.ps1" @CommonParams
-& "$ScriptPath\Find-ADObsoleteOS.ps1" @CommonParams
-& "$ScriptPath\Find-ADUnlinkedGPO.ps1" @CommonParams
-& "$ScriptPath\Find-ADDuplicateSPN.ps1" @CommonParams
-& "$ScriptPath\Test-ADReplicationHealth.ps1" @CommonParams
-& "$ScriptPath\Test-ADFSMORoles.ps1" @CommonParams</code></pre>
+<h3>T&acirc;che planifi&eacute;e : script individuel</h3>
+<pre><code>$Action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\PS-ManageInactiveAD\Find-ADInactiveUsers.ps1" -NoOpen -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"'
+
+$Trigger = New-ScheduledTaskTrigger -Daily -At '07:00'
+
+Register-ScheduledTask -TaskName 'AD-InactiveUsers-Daily' `
+  -Action $Action -Trigger $Trigger `
+  -User 'DOMAIN\svc-admanagement' -Password 'MotDePasse'</code></pre>
 
 <!-- ========================================== -->
-<h2 id="depannage">11. D&eacute;pannage</h2>
+<h2 id="depannage">12. D&eacute;pannage</h2>
 
 <h3>Erreurs courantes</h3>
 <table>
@@ -556,7 +591,7 @@ $CommonParams = @{
   <tr><td><code>Access is denied</code></td><td>Droits insuffisants</td><td>Ex&eacute;cuter avec un compte d&eacute;l&eacute;gu&eacute;</td></tr>
   <tr><td><code>Unable to contact the server</code></td><td>DC injoignable</td><td>V&eacute;rifier r&eacute;seau et DNS</td></tr>
   <tr><td><code>Protect from Accidental Deletion</code></td><td>OU prot&eacute;g&eacute;e</td><td>Retirer la protection dans ADUC</td></tr>
-  <tr><td><code>The term 'Get-GPO' is not recognized</code></td><td>Module GroupPolicy absent</td><td><code>Install-WindowsFeature GPMC</code></td></tr>
+  <tr><td><code>The term 'Get-GPO' is not recognized</code></td><td>Module GroupPolicy absent</td><td><code>Install-WindowsFeature GPMC</code> ou utiliser <code>-SkipGPO</code></td></tr>
 </table>
 
 <h3>Limitations connues</h3>
@@ -567,16 +602,17 @@ $CommonParams = @{
 </ul>
 
 <h3>V&eacute;rifier les logs</h3>
-<pre><code># Lister les fichiers de log
-Get-ChildItem C:\tmp\Logs\ -Filter *.log | Sort-Object LastWriteTime -Descending
+<pre><code># Lister les fichiers de log (depuis le r&eacute;pertoire des scripts)
+Get-ChildItem .\Rapports\Logs\ -Filter *.log | Sort-Object LastWriteTime -Descending
 
 # Lire le dernier log
-Get-Content (Get-ChildItem C:\tmp\Logs\ -Filter *.log | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName</code></pre>
+Get-Content (Get-ChildItem .\Rapports\Logs\ -Filter *.log | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName</code></pre>
 
 <hr>
 <p style="text-align:center; color:#888; font-size:9pt;">
-  PS-ManageInactiveAD v2.0 &mdash; Documentation g&eacute;n&eacute;r&eacute;e en 2026<br>
-  Pour g&eacute;n&eacute;rer un PDF : ouvrir ce fichier dans un navigateur &rarr; Ctrl+P &rarr; Enregistrer en PDF
+  PS-ManageInactiveAD v2.1 &mdash; Documentation g&eacute;n&eacute;r&eacute;e en 2026<br>
+  <a href="https://github.com/SyNode-IT/PS-ManageInactiveAD" style="color:#0078d4;">GitHub</a>
+  &mdash; Pour g&eacute;n&eacute;rer un PDF : ouvrir ce fichier dans un navigateur &rarr; Ctrl+P &rarr; Enregistrer en PDF
 </p>
 
 </body>

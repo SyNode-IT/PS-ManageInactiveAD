@@ -3,15 +3,15 @@
   Titre : PS-ManageInactiveAD : une boîte à outils PowerShell pour nettoyer votre Active Directory
   Slug suggéré : ps-manageinactivead-toolkit-powershell-active-directory
   Tags suggérés : PowerShell, Active Directory, Windows Server, Sysadmin, Sécurité, Automation
-  Meta description : Découvrez PS-ManageInactiveAD, une suite de 14 scripts PowerShell pour auditer, nettoyer et maintenir votre Active Directory. Compatible Server 2022 et 2025.
+  Meta description : Découvrez PS-ManageInactiveAD, une suite de 15 scripts PowerShell pour auditer, nettoyer et maintenir votre Active Directory. Compatible Server 2022 et 2025.
   Image de couverture suggérée : un terminal PowerShell avec des lignes de commande AD, ou le logo Windows Server
 -->
 
-# PS-ManageInactiveAD : 14 scripts PowerShell pour reprendre le contrôle de votre Active Directory
+# PS-ManageInactiveAD : 15 scripts PowerShell pour reprendre le contrôle de votre Active Directory
 
 Qui n'a jamais ouvert la console Active Directory Users and Computers pour tomber sur des centaines de comptes jamais utilisés, des groupes vides, et des objets ordinateur datant de l'ère Windows 7 ? Le ménage AD, tout le monde sait qu'il faut le faire. Peu d'équipes le font régulièrement.
 
-**PS-ManageInactiveAD** est une boîte à outils open source que j'ai retravaillée pour répondre à ce besoin. 14 scripts PowerShell, compatibles Windows Server 2022 et 2025, couvrant l'audit, le nettoyage et la surveillance de votre environnement AD.
+**PS-ManageInactiveAD** est une boîte à outils open source que j'ai retravaillée pour répondre à ce besoin. 15 scripts PowerShell, compatibles Windows Server 2022 et 2025, couvrant l'audit, le nettoyage et la surveillance de votre environnement AD.
 
 ---
 
@@ -64,16 +64,26 @@ Le nettoyage manuel est fastidieux et sujet aux erreurs. Les scripts permettent 
 | **Test-ADReplicationHealth** | Vérifie la réplication entre tous les contrôleurs de domaine. |
 | **Test-ADFSMORoles** | Audite le placement et la disponibilité des 5 rôles FSMO. |
 
+### Audit complet
+
+| Script | Ce qu'il fait |
+|--------|--------------|
+| **Invoke-ADFullAudit** | Lance les 14 scripts d'un coup et génère un **tableau de bord HTML** récapitulatif avec liens vers chaque rapport individuel. |
+
+Un seul `.\Invoke-ADFullAudit.ps1` et vous avez une vue complète de votre AD en quelques minutes.
+
 ---
 
 ## Philosophie de conception
 
 ### Mode safe par défaut
 
-Chaque script génère un rapport CSV sans rien modifier. Les actions destructives (désactiver, supprimer) ne s'activent que si vous passez explicitement le switch correspondant :
+Chaque script génère un rapport sans rien modifier. Deux formats sont produits automatiquement : un **CSV** (exploitable dans Excel) et un **rapport HTML** stylisé avec cartes résumé et couleurs de statut. Le rapport HTML s'ouvre automatiquement à la fin de l'exécution.
+
+Les actions destructives (désactiver, supprimer) ne s'activent que si vous passez explicitement le switch correspondant :
 
 ```powershell
-# Rapport seul - rien ne bouge
+# Rapport seul - rien ne bouge (ouvre le HTML automatiquement)
 .\Find-ADInactiveUsers.ps1
 
 # On désactive
@@ -99,9 +109,10 @@ Plutôt que de supprimer directement un compte, la bonne pratique c'est : **dés
 
 Tous les scripts partagent les mêmes paramètres pour une expérience homogène :
 
-- **`-ReportFilePath`** : chemin du CSV (défaut `C:\tmp\`)
+- **`-ReportFilePath`** : chemin du CSV (défaut `Rapports\<NomScript>.csv`)
+- **`-NoOpen`** : désactive l'ouverture auto du rapport HTML (pour les tâches planifiées)
 - **`-SearchBase`** / **`-ExcludeOU`** : cibler ou exclure des OUs
-- **`-EnableLogging`** : log horodaté dans `C:\tmp\Logs\`
+- **`-EnableLogging`** : log horodaté dans `Rapports\Logs\`
 - **`-EmailTo`** / **`-SmtpServer`** : notification email automatique
 - **`-WhatIf`** / **`-Confirm`** : simulation et confirmation
 
@@ -129,9 +140,9 @@ Invoke-WebRequest -Uri "https://github.com/SyNode-IT/PS-ManageInactiveAD/archive
 Expand-Archive -Path "$env:TEMP\PS-ManageInactiveAD.zip" -DestinationPath "C:\Scripts" -Force
 Rename-Item "C:\Scripts\PS-ManageInactiveAD-main" "C:\Scripts\PS-ManageInactiveAD"
 
-# Lancer un premier rapport
+# Lancer un audit complet
 cd C:\Scripts\PS-ManageInactiveAD
-.\Find-ADInactiveUsers.ps1
+.\Invoke-ADFullAudit.ps1
 ```
 
 Si Git est installé sur le serveur, vous pouvez aussi cloner le dépôt :
@@ -146,20 +157,20 @@ C'est tout. Pas de module à installer, pas de dépendance complexe. Le seul fic
 
 ## Automatisation
 
-Le vrai intérêt de ces scripts, c'est de les planifier. Voici un exemple de tâche planifiée pour un rapport hebdomadaire :
+Le vrai intérêt de ces scripts, c'est de les planifier. Avec `Invoke-ADFullAudit.ps1`, une seule tâche planifiée lance tout :
 
 ```powershell
 $Action = New-ScheduledTaskAction -Execute 'powershell.exe' `
-  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\PS-ManageInactiveAD\Find-ADInactiveUsers.ps1" -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"'
+  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\PS-ManageInactiveAD\Invoke-ADFullAudit.ps1" -NoOpen -EnableLogging -EmailTo "admin@corp.local" -SmtpServer "smtp.corp.local"'
 
 $Trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At '06:00'
 
-Register-ScheduledTask -TaskName 'AD-WeeklyReport' `
+Register-ScheduledTask -TaskName 'AD-FullAudit-Weekly' `
   -Action $Action -Trigger $Trigger `
   -User 'DOMAIN\svc-admanagement'
 ```
 
-Tous les lundis matin à 6h, vous recevez un rapport des comptes inactifs par email. Simple et efficace.
+Tous les lundis matin à 6h, vous recevez un tableau de bord complet de votre AD par email. Simple et efficace.
 
 ---
 
@@ -179,7 +190,7 @@ Voici le workflow que je recommande sur un cycle de 4 semaines :
 
 ## Documentation
 
-Le projet inclut une documentation technique complète (disponible en Markdown, HTML et PDF) couvrant chaque script en détail : paramètres, exemples, colonnes CSV, droits requis, et guide de dépannage.
+Le projet inclut une documentation technique complète au format HTML couvrant chaque script en détail : paramètres, exemples, colonnes CSV, droits requis, et guide de dépannage. Chaque rapport HTML inclut un lien direct vers cette documentation.
 
 ---
 

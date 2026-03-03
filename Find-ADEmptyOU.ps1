@@ -18,13 +18,13 @@
   Optional. Array of OU distinguished names to exclude from results.
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\EmptyOUs.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADEmptyOU.csv (+ .html).
 
 .PARAMETER DeleteObjects
   Optional switch. Deletes the empty OUs found. Supports -WhatIf.
 
 .PARAMETER EnableLogging
-  Optional switch. Enables logging to C:\tmp\Logs\.
+  Optional switch. Enables logging to Rapports\Logs\.
 
 .PARAMETER EmailTo
   Optional. Email recipient(s) for the report.
@@ -36,13 +36,13 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        2.0
+  Version:        2.1
   Original Author: Luca Sturlese
   Updated:        2026 - Server 2022/2025 compatibility, full rewrite
 
 .EXAMPLE
   .\Find-ADEmptyOU.ps1
-  Report only. Output to C:\tmp\EmptyOUs.csv.
+  Report only. Output to Rapports\Find-ADEmptyOU.csv.
 
 .EXAMPLE
   .\Find-ADEmptyOU.ps1 -SearchScope "OU=MGT,DC=corp,DC=local" -DeleteObjects

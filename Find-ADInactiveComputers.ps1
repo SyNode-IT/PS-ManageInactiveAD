@@ -30,7 +30,7 @@
   Optional. OU to move disabled computers to. Example: "OU=Disabled,DC=corp,DC=local"
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\InactiveComputers.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADInactiveComputers.csv (+ .html).
 
 .PARAMETER DisableObjects
   Optional switch. Disables inactive computers. Supports -WhatIf.
@@ -39,7 +39,7 @@
   Optional switch. Deletes inactive computers. Supports -WhatIf.
 
 .PARAMETER EnableLogging
-  Optional switch. Enables logging to C:\tmp\Logs\.
+  Optional switch. Enables logging to Rapports\Logs\.
 
 .PARAMETER EmailTo
   Optional. Email recipient(s) for the report.
@@ -51,13 +51,13 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        2.0
+  Version:        2.1
   Original Author: Luca Sturlese
   Updated:        2026 - Server 2022/2025 compatibility, full rewrite
 
 .EXAMPLE
   .\Find-ADInactiveComputers.ps1
-  Report only. Output to C:\tmp\InactiveComputers.csv.
+  Report only. Output to Rapports\Find-ADInactiveComputers.csv.
 
 .EXAMPLE
   .\Find-ADInactiveComputers.ps1 -SearchBase "OU=Workstations,DC=corp,DC=local" -DaysInactive 60

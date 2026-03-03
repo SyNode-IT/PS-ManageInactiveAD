@@ -17,13 +17,13 @@
   Optional. Array of OU distinguished names to exclude from results.
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\EmptyGroups.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADEmptyGroups.csv (+ .html).
 
 .PARAMETER DeleteObjects
   Optional switch. Deletes the empty groups found. Supports -WhatIf.
 
 .PARAMETER EnableLogging
-  Optional switch. Enables logging to C:\tmp\Logs\.
+  Optional switch. Enables logging to Rapports\Logs\.
 
 .PARAMETER EmailTo
   Optional. Email recipient(s) for the report.
@@ -35,13 +35,13 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        2.0
+  Version:        2.1
   Original Author: Luca Sturlese
   Updated:        2026 - Server 2022/2025 compatibility, full rewrite
 
 .EXAMPLE
   .\Find-ADEmptyGroups.ps1
-  Report only. Output to C:\tmp\EmptyGroups.csv.
+  Report only. Output to Rapports\Find-ADEmptyGroups.csv.
 
 .EXAMPLE
   .\Find-ADEmptyGroups.ps1 -SearchScope "OU=GROUPS,DC=corp,DC=local" -DeleteObjects -WhatIf

@@ -36,7 +36,7 @@
   Optional. OU to move disabled accounts to. Example: "OU=Disabled,DC=corp,DC=local"
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\InactiveUsers.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADInactiveUsers.csv (+ .html).
 
 .PARAMETER DisableUsers
   Optional switch. Disables inactive users. Supports -WhatIf.
@@ -45,7 +45,7 @@
   Optional switch. Deletes inactive users. Supports -WhatIf.
 
 .PARAMETER EnableLogging
-  Optional switch. Enables logging to C:\tmp\Logs\.
+  Optional switch. Enables logging to Rapports\Logs\.
 
 .PARAMETER EmailTo
   Optional. Email recipient(s) for the report.
@@ -57,13 +57,13 @@
   Optional. Sender email address. Defaults to ADManagement@<domain>.
 
 .NOTES
-  Version:        2.0
+  Version:        2.1
   Original Author: Luca Sturlese
   Updated:        2026 - Server 2022/2025 compatibility, full rewrite
 
 .EXAMPLE
   .\Find-ADInactiveUsers.ps1
-  Report only. Output to C:\tmp\InactiveUsers.csv.
+  Report only. Output to Rapports\Find-ADInactiveUsers.csv.
 
 .EXAMPLE
   .\Find-ADInactiveUsers.ps1 -SearchBase "OU=Paris,DC=corp,DC=local" -ExcludeOU "OU=VIP,OU=Paris,DC=corp,DC=local"

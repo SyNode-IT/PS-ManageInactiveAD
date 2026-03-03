@@ -19,7 +19,7 @@
   Optional switch. Recursively resolves nested group memberships. Default: $false.
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\PrivilegedAccounts.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADPrivilegedAccounts.csv (+ .html).
 
 .PARAMETER EnableLogging
   Optional switch. Enables logging.
@@ -34,7 +34,7 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        1.0
+  Version:        2.1
   Creation Date:  2026
   Compatible:     Windows Server 2022, Windows Server 2025
 

@@ -14,13 +14,13 @@
   Optional. LDAP path to restrict the search.
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\LockedAccounts.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADLockedAccounts.csv (+ .html).
 
 .PARAMETER UnlockAccounts
   Optional switch. Unlocks the locked accounts found. Supports -WhatIf.
 
 .PARAMETER EnableLogging
-  Optional switch. Enables logging to C:\tmp\Logs\.
+  Optional switch. Enables logging to Rapports\Logs\.
 
 .PARAMETER EmailTo
   Optional. Email recipient(s) for the report.
@@ -32,7 +32,7 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        1.0
+  Version:        2.1
   Creation Date:  2026
   Compatible:     Windows Server 2022, Windows Server 2025
 

@@ -18,7 +18,7 @@
   Optional. Array of OU distinguished names to exclude.
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\DisabledInGroups.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADDisabledInGroups.csv (+ .html).
 
 .PARAMETER RemoveMemberships
   Optional switch. Removes group memberships from disabled accounts. Supports -WhatIf.
@@ -36,7 +36,7 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        1.0
+  Version:        2.1
   Creation Date:  2026
   Compatible:     Windows Server 2022, Windows Server 2025
 

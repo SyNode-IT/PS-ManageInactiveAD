@@ -20,7 +20,7 @@
   Optional. Array of OU distinguished names to exclude.
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\StalePasswords.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADStalePasswords.csv (+ .html).
 
 .PARAMETER ForceChangeAtLogon
   Optional switch. Sets 'User must change password at next logon'. Supports -WhatIf.
@@ -38,7 +38,7 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        1.0
+  Version:        2.1
   Creation Date:  2026
   Compatible:     Windows Server 2022, Windows Server 2025
 

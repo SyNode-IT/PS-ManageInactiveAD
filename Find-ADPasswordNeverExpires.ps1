@@ -25,7 +25,7 @@
   Optional. Prefix/postfix identifying service accounts. Default: 'svc'.
 
 .PARAMETER ReportFilePath
-  Optional. Full CSV path for the report. Default: C:\tmp\PasswordNeverExpires.csv.
+  Optional. Full CSV/HTML report path. Default: Rapports\Find-ADPasswordNeverExpires.csv (+ .html).
 
 .PARAMETER RemoveFlag
   Optional switch. Removes the PasswordNeverExpires flag. Supports -WhatIf.
@@ -43,7 +43,7 @@
   Optional. Sender email address.
 
 .NOTES
-  Version:        1.0
+  Version:        2.1
   Creation Date:  2026
   Compatible:     Windows Server 2022, Windows Server 2025
 
